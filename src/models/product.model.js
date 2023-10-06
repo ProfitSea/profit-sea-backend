@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { toJSON, paginate } = require('./plugins');
+const { vendorNameEnums } = require('../utils/enums');
 
 const priceSchema = new mongoose.Schema({
   price: {
@@ -15,11 +16,11 @@ const priceSchema = new mongoose.Schema({
 const productSchema = new mongoose.Schema({
   vendor: {
     type: String,
+    enum: vendorNameEnums,
     required: true,
   },
   imgSrc: {
     type: String,
-    required: true,
   },
   brand: {
     type: String,

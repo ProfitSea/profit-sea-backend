@@ -1,5 +1,6 @@
 const Joi = require('joi');
 const { objectId } = require('./custom.validation');
+const { vendorNameEnums } = require('../utils/enums');
 
 const priceValidation = Joi.object().keys({
   price: Joi.number().required(),
@@ -8,8 +9,10 @@ const priceValidation = Joi.object().keys({
 
 const createProduct = {
   body: Joi.object().keys({
-    vendor: Joi.string().required(),
-    imgSrc: Joi.string().required(),
+    vendor: Joi.string()
+      .required()
+      .valid(...vendorNameEnums),
+    imgSrc: Joi.string().allow('').allow(null),
     brand: Joi.string().required(),
     description: Joi.string().required(),
     productNumber: Joi.string().required(),
@@ -21,11 +24,10 @@ const createProduct = {
 
 const getProducts = {
   query: Joi.object().keys({
-    vendor: Joi.string(),
-    brand: Joi.string(),
-    description: Joi.string(),
-    productNumber: Joi.string(),
-    sortBy: Joi.string(),
+    vendor: Joi.string().allow('').allow(null),
+    brand: Joi.string().valid(...vendorNameEnums),
+    productNumber: Joi.string().allow('').allow(null),
+    sortBy: Joi.string().allow('').allow(null),
     limit: Joi.number().integer(),
     page: Joi.number().integer(),
   }),
@@ -44,7 +46,7 @@ const updateProduct = {
   body: Joi.object()
     .keys({
       vendor: Joi.string(),
-      imgSrc: Joi.string(),
+      imgSrc: Joi.string().allow('').allow(null),
       brand: Joi.string(),
       description: Joi.string(),
       productNumber: Joi.string(),

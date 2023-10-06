@@ -12,6 +12,15 @@ const createProduct = catchAsync(async (req, res) => {
 const getProducts = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['vendor', 'brand', 'description', 'productNumber']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+
+  if (filter.brand) {
+    filter.brand = { $regex: filter.brand, $options: 'i' };
+  }
+
+  if (filter.vendor) {
+    filter.vendor = { $regex: filter.vendor, $options: 'i' };
+  }
+
   const result = await productService.queryProducts(filter, options);
   res.send(result);
 });
