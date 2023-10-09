@@ -1,15 +1,17 @@
-runtime: nodejs18 # Ensure you select the appropriate Node.js runtime version
+env: flex
+runtime: nodejs
 
-instance_class: F2 # This can be adjusted based on your needs
+instance_class: F1
 
 env_variables:
-  PORT: '8080'
   MONGODB_URL: 'mongodb+srv://profitsea:profitsea@cluster0.jay391o.mongodb.net/profitsea?retryWrites=true&w=majority'
   JWT_SECRET: 'thisisasamplesecret'
   JWT_ACCESS_EXPIRATION_MINUTES: '30'
   JWT_REFRESH_EXPIRATION_DAYS: '30'
 
 automatic_scaling:
-  target_cpu_utilization: 0.65 # Adjust based on your needs
-  min_instances: 1
-  max_instances: 5
+  min_num_instances: 1
+  max_num_instances: 3
+  cool_down_period_sec: 180
+  cpu_utilization:
+    target_utilization: 0.75
