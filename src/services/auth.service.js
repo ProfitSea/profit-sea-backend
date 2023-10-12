@@ -4,6 +4,8 @@ const userService = require('./user.service');
 const Token = require('../models/token.model');
 const ApiError = require('../utils/ApiError');
 const { tokenTypes } = require('../config/tokens');
+const apiKeyService = require('./apiKey.service');
+const { apiKeyTypes } = require('../config/apiKeys');
 
 /**
  * Login with username and password
@@ -90,10 +92,32 @@ const verifyEmail = async (verifyEmailToken) => {
   }
 };
 
+/**
+ * Verify Api Key
+ * @param {string} apikey
+ * @param {string} email
+ * @returns {Promise}
+ */
+const verifyApiKey = async (apiKey, email) => {
+  try {
+    const user = await userService.getUserByEmail(email);
+    if (!user) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'ApiKey Verification failed');
+    }
+    const apiKeyDoc = await apiKeyService.verifyApiKey(apiKey, apiKeyTypes.AUTH, user.id);
+    if (!apiKeyDoc) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'ApiKey Verification failed');
+    }
+  } catch (error) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'ApiKey Verification failed');
+  }
+};
+
 module.exports = {
   loginUserWithEmailAndPassword,
   logout,
   refreshAuth,
   resetPassword,
   verifyEmail,
+  verifyApiKey,
 };

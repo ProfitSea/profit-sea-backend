@@ -45,7 +45,7 @@ const saveApiKey = async (apiKey, userId, expires, type, blacklisted = false) =>
  * @returns {Promise<Token>}
  */
 const verifyApiKey = async (apiKey, type, userId) => {
-  const apiKeyDoc = await config.apiKey.findOne({ apiKey, type, user: userId, blacklisted: false });
+  const apiKeyDoc = await ApiKey.findOne({ apiKey, type, user: userId, blacklisted: false });
   if (!apiKeyDoc) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'API Key not found');
   }
@@ -60,6 +60,7 @@ const verifyApiKey = async (apiKey, type, userId) => {
 const generateAuthApiKey = async (user) => {
   const apiKeyExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
   const apiKey = await generateApiKey(user.id, apiKeyExpires, apiKeyTypes.AUTH);
+  await saveApiKey(apiKey, user.id, apiKeyExpires, apiKeyTypes.AUTH);
 
   return {
     apiKey,

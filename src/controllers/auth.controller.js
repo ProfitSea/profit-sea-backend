@@ -49,6 +49,11 @@ const verifyEmail = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const verifyApiKey = catchAsync(async (req, res) => {
+  await authService.verifyApiKey(req.query.apiKey, req.query.email);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
 module.exports = {
   register,
   login,
@@ -58,4 +63,5 @@ module.exports = {
   resetPassword,
   sendVerificationEmail,
   verifyEmail,
+  verifyApiKey,
 };

@@ -49,6 +49,13 @@ const verifyEmail = {
   }),
 };
 
+const verifyApiKey = {
+  query: Joi.object().keys({
+    apiKey: Joi.string().required(),
+    email: Joi.string().required().email(),
+  }),
+};
+
 module.exports = {
   register,
   login,
@@ -57,4 +64,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  verifyApiKey
 };
