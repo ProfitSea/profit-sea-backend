@@ -1,18 +1,20 @@
 const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
-const { authService, userService, tokenService, emailService } = require('../services');
+const { authService, userService, tokenService, emailService, apiKeyService } = require('../services');
 
 const register = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
   const tokens = await tokenService.generateAuthTokens(user);
-  res.status(httpStatus.CREATED).send({ user, tokens });
+  const apiKey = await apiKeyService.generateAuthApiKey(user);
+  res.status(httpStatus.CREATED).send({ user, tokens, apiKey });
 });
 
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const user = await authService.loginUserWithEmailAndPassword(email, password);
   const tokens = await tokenService.generateAuthTokens(user);
-  res.send({ user, tokens });
+  const apiKey = await apiKeyService.generateAuthApiKey(user);
+  res.send({ user, tokens, apiKey });
 });
 
 const logout = catchAsync(async (req, res) => {
