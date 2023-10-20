@@ -67,9 +67,22 @@ const generateAuthApiKey = async (user) => {
   };
 };
 
+const findApiKey = (apiKey, userId, type, blacklisted = false) => {
+  return ApiKey.findOne({ apiKey, type, user: userId, blacklisted });
+};
+
+const deleteApiKey = async (user, apiKey) => {
+  const apiKeyDoc = await findApiKey(apiKey, user.id, apiKeyTypes.AUTH, false);
+  if (!apiKeyDoc) {
+    return;
+  }
+  await apiKeyDoc.remove();
+};
+
 module.exports = {
   generateApiKey,
   saveApiKey,
   verifyApiKey,
   generateAuthApiKey,
+  deleteApiKey,
 };
