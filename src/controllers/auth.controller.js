@@ -51,12 +51,12 @@ const verifyEmail = catchAsync(async (req, res) => {
 const verifyApiKey = catchAsync(async (req, res) => {
   const user = await authService.verifyApiKey(req.query.apiKey, req.query.email);
 
-  const [token] = await Promise.all([
-    tokenService.generateAccessToken(user),
+  const [tokens] = await Promise.all([
+    tokenService.generateAuthTokens(user),
     apiKeyService.deleteApiKey(user, req.query.apiKey),
   ]);
 
-  res.status(httpStatus.OK).send({ token });
+  res.status(httpStatus.OK).send({ tokens });
 });
 
 module.exports = {
