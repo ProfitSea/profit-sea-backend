@@ -11,6 +11,11 @@ const priceSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  quantity: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
 });
 
 const productSchema = new mongoose.Schema({
@@ -42,10 +47,6 @@ const productSchema = new mongoose.Schema({
     type: [priceSchema],
     required: true,
     _id: false,
-  },
-  quantity: {
-    type: Number,
-    default: 0,
   },
 });
 

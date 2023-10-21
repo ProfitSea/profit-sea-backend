@@ -5,6 +5,7 @@ const { vendorNameEnums } = require('../utils/enums');
 const priceValidation = Joi.object().keys({
   price: Joi.number().required(),
   unit: Joi.string().required(),
+  quantity: Joi.number().integer().required(),
 });
 
 const createProduct = {
@@ -18,7 +19,6 @@ const createProduct = {
     productNumber: Joi.string().required(),
     packSize: Joi.string().required(),
     prices: Joi.array().items(priceValidation).required(),
-    quantity: Joi.number().integer().default(0),
   }),
 };
 
@@ -52,7 +52,6 @@ const updateProduct = {
       productNumber: Joi.string(),
       packSize: Joi.string(),
       prices: Joi.array().items(priceValidation),
-      quantity: Joi.number().integer(),
     })
     .min(1),
 };
