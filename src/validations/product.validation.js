@@ -5,7 +5,6 @@ const { vendorNameEnums } = require('../utils/enums');
 const priceValidation = Joi.object().keys({
   price: Joi.number().required(),
   unit: Joi.string().required(),
-  quantity: Joi.number().integer().required(),
 });
 
 const createProduct = {

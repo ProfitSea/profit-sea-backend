@@ -1,31 +1,36 @@
 const mongoose = require('mongoose');
 const { toJSON, paginate } = require('./plugins');
 
-const listSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    index: true,
-    default: 'Untitled List',
+const listSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      index: true,
+      default: 'Untitled List',
+    },
+    listItems: {
+      type: [
+        {
+          type: mongoose.SchemaTypes.ObjectId,
+          ref: 'ListItems',
+        },
+      ],
+      default: [],
+    },
+    user: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    itemsCount: {
+      type: Number,
+      default: 0,
+    },
   },
-  products: {
-    type: [
-      {
-        type: mongoose.SchemaTypes.ObjectId,
-        ref: 'Products',
-      },
-    ],
-    default: [],
-  },
-  user: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  productsCount: {
-    type: Number,
-    default: 0,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 // add plugin that converts mongoose to json
 listSchema.plugin(toJSON);
@@ -42,16 +47,16 @@ listSchema.statics.isNameTaken = async function (name, excludeUserId) {
   return !!listbuilder;
 };
 
-// Pre-save hook to update productsCount before saving
+// Pre-save hook to update itemsCount before saving
 listSchema.pre('save', function (next) {
-  this.productsCount = this.products.length;
+  this.itemsCount = this.listItems.length;
   next();
 });
 
-// Pre-updateOne hook to update productsCount before updating
+// Pre-updateOne hook to update itemsCount before updating
 listSchema.pre('updateOne', async function (next) {
   const docToUpdate = await this.model.findOne(this.getQuery());
-  this._update.productsCount = docToUpdate.products.length;
+  this._update.itemsCount = docToUpdate.listItems.length;
   next();
 });
 

@@ -31,7 +31,7 @@ const queryLists = async (filter, options) => {
  * @returns {Promise<List>}
  */
 const getListById = async (listId) => {
-  return List.findById(listId).populate('products');
+  return List.findById(listId).populate('listItems');
 };
 
 /**
