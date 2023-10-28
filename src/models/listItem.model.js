@@ -18,6 +18,19 @@ const listItemSchema = mongoose.Schema(
       ref: 'List',
       required: true,
     },
+    saleUnitQuantities: [
+      {
+        saleUnit: {
+          type: mongoose.SchemaTypes.ObjectId,
+          ref: 'ProductSaleUnit',
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
