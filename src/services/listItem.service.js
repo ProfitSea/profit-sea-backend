@@ -1,14 +1,61 @@
 const httpStatus = require('http-status');
 const { ListItem } = require('../models');
 const ApiError = require('../utils/ApiError');
+const productsService = require('./product.service');
 
 /**
- * Create a list
+ * Get listItem by id
+ * @param {ObjectId} listItemId
+ * @returns {Promise<ListItem>}
+ */
+const getListItemById = async (listItemId) => {
+  return ListItem.findById(listItemId).populate({
+    path: 'product',
+    populate: {
+      path: 'saleUnits',
+      populate: {
+        path: 'price',
+      },
+    },
+  });
+};
+
+/**
+ * Create a listItem
  * @param {Object} listBody
  * @returns {Promise<ListItem>}
  */
-const createListItem = async (user) => {
-  return ListItem.create({ user: user.id });
+const createListItem = async (user, listId, product) => {
+  const [productObj] = await Promise.all([productsService.createProduct(product)]);
+  if (!productObj) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+  const existingListItem = await ListItem.findOne({
+    user: user.id,
+    list: listId,
+    product: productObj.id,
+  });
+
+  if (existingListItem) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Product already in list');
+  }
+
+  const saleUnitQuantities = productObj.saleUnits.map((saleUnit) => ({
+    saleUnit: saleUnit.id,
+    quantity: 0,
+  }));
+
+  const listItemPayload = {
+    user: user.id,
+    list: listId,
+    product: productObj,
+    saleUnitQuantities,
+  };
+
+  const listItem = new ListItem(listItemPayload);
+  await listItem.save();
+
+  return getListItemById(listItem.id);
 };
 
 /**
@@ -21,17 +68,8 @@ const createListItem = async (user) => {
  * @returns {Promise<QueryResult>}
  */
 const queryListItems = async (filter, options) => {
-  const lists = await ListItem.paginate(filter, options);
-  return lists;
-};
-
-/**
- * Get list by id
- * @param {ObjectId} listId
- * @returns {Promise<ListItem>}
- */
-const getListItemById = async (listId) => {
-  return ListItem.findById(listId).populate('listItems');
+  const listItems = await ListItem.paginate(filter, options);
+  return listItems;
 };
 
 /**
@@ -40,14 +78,14 @@ const getListItemById = async (listId) => {
  * @param {Object} updateBody
  * @returns {Promise<ListItem>}
  */
-const updateListItemById = async (listId, updateBody) => {
-  const list = await getListItemById(listId);
-  if (!list) {
+const updateListItemById = async (listItemId, updateBody) => {
+  const listItem = await getListItemById(listItemId);
+  if (!listItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
   }
-  Object.assign(list, updateBody);
-  await list.save();
-  return list;
+  Object.assign(listItem, updateBody);
+  await listItem.save();
+  return listItem;
 };
 
 /**
@@ -55,13 +93,12 @@ const updateListItemById = async (listId, updateBody) => {
  * @param {ObjectId} listId
  * @returns {Promise<ListItem>}
  */
-const deleteListItemById = async (listId) => {
-  const list = await getListItemById(listId);
-  if (!list) {
+const deleteListItemById = async (listItemId, userId) => {
+  const listItem = await ListItem.findOne({ _id: listItemId, user: userId });
+  if (!listItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
   }
-  await list.remove();
-  return list;
+  await listItem.remove();
 };
 
 module.exports = {

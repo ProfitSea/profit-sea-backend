@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const { List } = require('../models');
 const ApiError = require('../utils/ApiError');
+const listItemService = require('./listItem.service');
 
 /**
  * Create a list
@@ -9,6 +10,48 @@ const ApiError = require('../utils/ApiError');
  */
 const createList = async (user) => {
   return List.create({ user: user.id });
+};
+
+/**
+ * Add product(listItem) in a list
+ * @param {Object} listBody
+ * @returns {Promise<List>}
+ */
+const addListItem = async (user, listId, product) => {
+  const list = await List.findById(listId);
+  if (!list) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
+  }
+
+  const listItem = await listItemService.createListItem(user, listId, product);
+
+  if (!listItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+  list.listItems.push(listItem);
+  list.itemsCount = list.listItems.length;
+  await list.save();
+
+  return listItem;
+};
+
+/**
+ * delete product(listItem) in a list
+ * @param {Object} listItemId
+ * @returns {Promise<List>}
+ */
+const removeListItem = async (user, listId, listItemId) => {
+  const list = await List.findOne({ _id: listId, user: user.id });
+  if (!list) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
+  }
+
+  await listItemService.deleteListItemById(listItemId, user.id);
+
+  list.listItems = list.listItems.filter((listItem) => listItem.toString() !== listItemId.toString());
+  list.itemsCount = list.listItems.length;
+
+  await list.save();
 };
 
 /**
@@ -31,7 +74,18 @@ const queryLists = async (filter, options) => {
  * @returns {Promise<List>}
  */
 const getListById = async (listId) => {
-  return List.findById(listId).populate('listItems');
+  return List.findById(listId).populate({
+    path: 'listItems',
+    populate: {
+      path: 'product',
+      populate: {
+        path: 'saleUnits',
+        populate: {
+          path: 'price',
+        },
+      },
+    },
+  });
 };
 
 /**
@@ -46,6 +100,26 @@ const updateListById = async (listId, updateBody) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
   }
   Object.assign(list, updateBody);
+  await list.save();
+  return list;
+};
+
+/**
+ * Update list by id
+ * @param {ObjectId} listId
+ * @param {String} name
+ * @returns {Promise<List>}
+ */
+const updateListName = async (listId, user, name) => {
+  const list = await List.findOne({
+    _id: listId,
+    user: user.id,
+  });
+  if (!list) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
+  }
+
+  Object.assign(list, { name });
   await list.save();
   return list;
 };
@@ -70,4 +144,7 @@ module.exports = {
   getListById,
   updateListById,
   deleteListById,
+  updateListName,
+  addListItem,
+  removeListItem,
 };

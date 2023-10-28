@@ -17,4 +17,11 @@ router
   .patch(auth(), validate(listValidation.updateList), listController.updateList)
   .delete(auth(), validate(listValidation.deleteList), listController.deleteList);
 
+router.route('/name/:listId').patch(auth(), validate(listValidation.updateListName), listController.updateListName);
+
+router
+  .route('/list-item/:listId')
+  .post(auth(), validate(listValidation.addListItem), listController.addListItem)
+  .delete(auth(), validate(listValidation.removeListItem), listController.removeListItem);
+
 module.exports = router;

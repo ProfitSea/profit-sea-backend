@@ -3,8 +3,8 @@ const { ProductSaleUnit } = require('../models');
 const ApiError = require('../utils/ApiError');
 
 /**
- * Create a price
- * @param {Object} priceBody
+ * Create a saleUnit
+ * @param {Object} sale unit body
  * @returns {Promise<ProductSaleUnit>}
  */
 const createProductSaleUnit = async (body, session) => {
@@ -16,7 +16,7 @@ const createProductSaleUnit = async (body, session) => {
 };
 
 /**
- * Query for prices
+ * Query for saleUnits
  * @param {Object} filter - Mongo filter
  * @param {Object} options - Query options
  * @param {string} [options.sortBy] - Sort option in the format: sortField:(desc|asc)
@@ -25,47 +25,54 @@ const createProductSaleUnit = async (body, session) => {
  * @returns {Promise<QueryResult>}
  */
 const queryProductSaleUnits = async (filter, options) => {
-  const prices = await ProductSaleUnit.paginate(filter, options);
-  return prices;
+  const saleUnits = await ProductSaleUnit.paginate(filter, options);
+  return saleUnits;
 };
 
 /**
- * Get price by id
- * @param {ObjectId} priceId
+ * Get saleUnit by id
+ * @param {ObjectId} saleUnitId
  * @returns {Promise<ProductSaleUnit>}
  */
-const getProductSaleUnitById = async (priceId) => {
-  return ProductSaleUnit.findById(priceId);
+const getProductSaleUnitById = async (saleUnitId) => {
+  return ProductSaleUnit.findById(saleUnitId);
 };
 
 /**
- * Update price by id
- * @param {ObjectId} priceId
+ * Update saleUnit by id
+ * @param {ObjectId} saleUnitId
  * @param {Object} updateBody
  * @returns {Promise<ProductSaleUnit>}
  */
-const updateProductSaleUnitById = async (priceId, updateBody) => {
-  const price = await getProductSaleUnitById(priceId);
-  if (!price) {
+const updateProductSaleUnitById = async (saleUnitId, updateBody, session) => {
+  const saleUnit = await getProductSaleUnitById(saleUnitId);
+  if (!saleUnit) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ProductSaleUnit not found');
   }
-  Object.assign(price, updateBody);
-  await price.save();
-  return price;
+
+  Object.assign(saleUnit, updateBody);
+
+  if (session) {
+    await saleUnit.save({ session });
+    return saleUnit;
+  }
+
+  await saleUnit.save();
+  return saleUnit;
 };
 
 /**
- * Delete price by id
- * @param {ObjectId} priceId
+ * Delete sale unit by id
+ * @param {ObjectId} saleUnitId
  * @returns {Promise<ProductSaleUnit>}
  */
-const deleteProductSaleUnitById = async (priceId) => {
-  const price = await getProductSaleUnitById(priceId);
-  if (!price) {
+const deleteProductSaleUnitById = async (saleUnitId) => {
+  const saleUnit = await getProductSaleUnitById(saleUnitId);
+  if (!saleUnit) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ProductSaleUnit not found');
   }
-  await price.remove();
-  return price;
+  await saleUnit.remove();
+  return saleUnit;
 };
 
 module.exports = {

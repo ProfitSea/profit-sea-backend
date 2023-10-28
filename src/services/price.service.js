@@ -44,12 +44,17 @@ const getPriceById = async (priceId) => {
  * @param {Object} updateBody
  * @returns {Promise<Price>}
  */
-const updatePriceById = async (priceId, updateBody) => {
+const updatePriceById = async (priceId, updateBody, session) => {
   const price = await getPriceById(priceId);
   if (!price) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Price not found');
   }
   Object.assign(price, updateBody);
+
+  if (session) {
+    await price.save({ session });
+    return price;
+  }
   await price.save();
   return price;
 };

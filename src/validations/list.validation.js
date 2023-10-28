@@ -1,5 +1,6 @@
 const Joi = require('joi');
 const { objectId } = require('./custom.validation');
+const { productSchema } = require('./product.validation');
 
 const createList = {
   body: Joi.object().keys({}),
@@ -15,13 +16,13 @@ const getLists = {
 
 const getList = {
   params: Joi.object().keys({
-    productId: Joi.string().custom(objectId), // You might also want to validate this using a custom objectId validation similar to the user.
+    listId: Joi.string().custom(objectId), // You might also want to validate this using a custom objectId validation similar to the user.
   }),
 };
 
 const updateList = {
   params: Joi.object().keys({
-    productId: Joi.string().custom(objectId), // Same as above regarding custom objectId validation.
+    listId: Joi.string().custom(objectId), // Same as above regarding custom objectId validation.
   }),
   body: Joi.object()
     .keys({
@@ -32,8 +33,41 @@ const updateList = {
 
 const deleteList = {
   params: Joi.object().keys({
-    productId: Joi.string().custom(objectId), // Again, you may want custom objectId validation.
+    listId: Joi.string().custom(objectId), // Again, you may want custom objectId validation.
   }),
+};
+
+const updateListName = {
+  params: Joi.object().keys({
+    listId: Joi.string().custom(objectId).required(), // Again, you may want custom objectId validation.
+  }),
+  body: Joi.object()
+    .keys({
+      name: Joi.string().required(),
+    })
+    .min(1),
+};
+
+const addListItem = {
+  params: Joi.object().keys({
+    listId: Joi.string().custom(objectId).required(), // Again, you may want custom objectId validation.
+  }),
+  body: Joi.object()
+    .keys({
+      product: productSchema,
+    })
+    .min(1),
+};
+
+const removeListItem = {
+  params: Joi.object().keys({
+    listId: Joi.string().custom(objectId).required(), // Again, you may want custom objectId validation.
+  }),
+  body: Joi.object()
+    .keys({
+      listItemId: Joi.string().custom(objectId).required(),
+    })
+    .min(1),
 };
 
 module.exports = {
@@ -42,4 +76,7 @@ module.exports = {
   updateList,
   deleteList,
   createList,
+  updateListName,
+  addListItem,
+  removeListItem,
 };

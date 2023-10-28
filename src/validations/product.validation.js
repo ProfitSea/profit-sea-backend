@@ -7,6 +7,18 @@ const priceValidation = Joi.object().keys({
   unit: Joi.string().required(),
 });
 
+const productSchema = Joi.object().keys({
+  vendor: Joi.string()
+    .required()
+    .valid(...vendorNameEnums),
+  imgSrc: Joi.string().allow('').allow(null),
+  brand: Joi.string().required(),
+  description: Joi.string().required(),
+  productNumber: Joi.string().required(),
+  packSize: Joi.string().required(),
+  prices: Joi.array().items(priceValidation).required(),
+});
+
 const createProduct = {
   body: Joi.object().keys({
     vendor: Joi.string()
@@ -67,4 +79,5 @@ module.exports = {
   getProduct,
   updateProduct,
   deleteProduct,
+  productSchema,
 };

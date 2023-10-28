@@ -22,14 +22,104 @@ const getProductById = async (productId) => {
 };
 
 /**
+ * Update product price
+ * @param {ObjectId} productId
+ * @returns {Promise<Product>}
+ */
+const updateProductsPrice = async (existingProduct, updatedPrices) => {
+  // Create a map for quick lookup
+  const existingUnitsMap = Object.fromEntries(existingProduct.saleUnits.map((unit) => [unit.unit, unit]));
+
+  // // Validate if all units in updatedPrices exist in the existing product
+  // const allUnitsExist = updatedPrices.every(({ unit }) => unit in existingUnitsMap);
+
+  // if (!allUnitsExist) {
+  //   throw new ApiError(httpStatus.BAD_REQUEST, 'One or more units in the price array do not exist');
+  // }
+
+  const session = await mongoose.startSession();
+  const transactionOptions = {
+    readPreference: 'primary',
+    readConcern: { level: 'local' },
+    writeConcern: { w: 'majority' },
+  };
+
+  try {
+    await session.withTransaction(async () => {
+      const deactivationPromises = updatedPrices
+        .map((updatedPrice) => {
+          const existingSaleUnit = existingUnitsMap[updatedPrice.unit];
+          if (existingSaleUnit && existingSaleUnit.price.price !== updatedPrice.price) {
+            return priceService.updatePriceById(existingSaleUnit.price._id, { active: false }, session);
+          }
+          return Promise.resolve();
+        })
+        .filter(Boolean);
+
+      const newPricePromises = updatedPrices
+        .map((updatedPrice) => {
+          const existingSaleUnit = existingUnitsMap[updatedPrice.unit];
+          if (existingSaleUnit && existingSaleUnit.price.price !== updatedPrice.price) {
+            return priceService.createPrice(
+              {
+                product: existingProduct._id,
+                productSaleUnit: existingSaleUnit._id,
+                price: updatedPrice.price,
+              },
+              session
+            );
+          }
+          return Promise.resolve();
+        })
+        .filter(Boolean);
+
+      const newPrices = await Promise.all(newPricePromises);
+
+      const updateSaleUnitPromises = newPrices
+        .map((newPrice, index) => {
+          const existingSaleUnit = existingUnitsMap[updatedPrices[index].unit];
+          if (existingSaleUnit && existingSaleUnit.price.price !== updatedPrices[index].price) {
+            return productSaleUnitService.updateProductSaleUnitById(existingSaleUnit._id, { price: newPrice._id }, session);
+          }
+          return Promise.resolve();
+        })
+        .filter(Boolean);
+
+      // Await all deactivations and updates
+      await Promise.all(deactivationPromises);
+      await Promise.all(updateSaleUnitPromises);
+    }, transactionOptions);
+
+    return getProductById(existingProduct._id);
+  } catch (error) {
+    console.error('Transaction Error: ', error);
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+/**
  * Create a product
  * @param {Object} productBody
  * @returns {Promise<Product>}
  */
 const createProduct = async (productBody) => {
-  if (await Product.isProductNumberTaken(productBody.productNumber)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Product with product number already exists');
+  const existingProduct = await Product.findOne({
+    productNumber: productBody.productNumber,
+  }).populate({
+    path: 'saleUnits',
+    populate: {
+      path: 'price',
+    },
+  });
+
+  if (existingProduct) {
+    // If the product already exists, update the prices
+    const updatedProduct = await updateProductsPrice(existingProduct, productBody.prices);
+    return updatedProduct;
   }
+
   const session = await mongoose.startSession();
   const transactionOptions = {
     readPreference: 'primary',

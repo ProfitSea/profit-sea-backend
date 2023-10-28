@@ -12,7 +12,7 @@ const listSchema = new mongoose.Schema(
       type: [
         {
           type: mongoose.SchemaTypes.ObjectId,
-          ref: 'ListItems',
+          ref: 'ListItem',
         },
       ],
       default: [],

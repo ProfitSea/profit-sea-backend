@@ -9,6 +9,16 @@ const createList = catchAsync(async (req, res) => {
   res.status(httpStatus.CREATED).send({ list });
 });
 
+const addListItem = catchAsync(async (req, res) => {
+  const list = await listService.addListItem(req.user, req.params.listId, req.body.product);
+  res.status(httpStatus.CREATED).send({ list });
+});
+
+const removeListItem = catchAsync(async (req, res) => {
+  const list = await listService.removeListItem(req.user, req.params.listId, req.body.listItemId);
+  res.status(httpStatus.CREATED).send({ list });
+});
+
 const getLists = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['vendor', 'brand', 'description', 'listNumber']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
@@ -21,7 +31,7 @@ const getLists = catchAsync(async (req, res) => {
     filter.vendor = { $regex: filter.vendor, $options: 'i' };
   }
 
-  const result = await listService.queryLists(filter, options);
+  const result = await listService.queryLists({ ...filter, user: req.user.id }, options);
   res.send({ result });
 });
 
@@ -38,6 +48,11 @@ const updateList = catchAsync(async (req, res) => {
   res.send({ list });
 });
 
+const updateListName = catchAsync(async (req, res) => {
+  const list = await listService.updateListName(req.params.listId, req.user, req.body.name);
+  res.send({ list });
+});
+
 const deleteList = catchAsync(async (req, res) => {
   await listService.deleteListById(req.params.listId);
   res.status(httpStatus.NO_CONTENT).send();
@@ -49,4 +64,7 @@ module.exports = {
   getList,
   updateList,
   deleteList,
+  updateListName,
+  addListItem,
+  removeListItem,
 };
