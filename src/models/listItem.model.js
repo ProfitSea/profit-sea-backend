@@ -8,6 +8,10 @@ const listItemSchema = mongoose.Schema(
       ref: 'Products',
       required: true,
     },
+    vendor: {
+      type: String,
+      required: true,
+    },
     user: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: 'User',

@@ -50,6 +50,7 @@ const createListItem = async (user, listId, product) => {
     list: listId,
     product: productObj,
     saleUnitQuantities,
+    vendor: productObj.vendor,
   };
 
   const listItem = new ListItem(listItemPayload);
