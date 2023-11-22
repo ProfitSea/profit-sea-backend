@@ -10,8 +10,8 @@ const createList = catchAsync(async (req, res) => {
 });
 
 const addListItem = catchAsync(async (req, res) => {
-  const list = await listService.addListItem(req.user, req.params.listId, req.body.product);
-  res.status(httpStatus.CREATED).send({ list });
+  const listItem = await listService.addListItem(req.user, req.params.listId, req.body.product);
+  res.status(httpStatus.CREATED).send({ listItem });
 });
 
 const removeListItem = catchAsync(async (req, res) => {

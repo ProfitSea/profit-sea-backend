@@ -76,12 +76,19 @@ const queryLists = async (filter, options) => {
 const getListById = async (listId) => {
   return List.findById(listId).populate({
     path: 'listItems',
-    populate: {
-      path: 'product',
-      populate: {
-        path: 'saleUnits',
+    populate: [
+      {
+        path: 'product',
       },
-    },
+      {
+        path: 'saleUnitQuantities.saleUnit',
+        model: 'ProductSaleUnit', // Replace with the correct model name for sale units
+      },
+      {
+        path: 'saleUnitQuantities.price',
+        model: 'Price', // Replace with the correct model name for price
+      },
+    ],
   });
 };
 
