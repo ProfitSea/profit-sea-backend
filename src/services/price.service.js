@@ -73,10 +73,19 @@ const deletePriceById = async (priceId) => {
   return price;
 };
 
+const deactivatePricesByListItemId = async (listItemId, saleUnitId, id, session) => {
+  await Price.updateMany(
+    { productSaleUnit: saleUnitId, listItem: listItemId, _id: { $ne: id } },
+    { active: false },
+    { session }
+  );
+};
+
 module.exports = {
   createPrice,
   queryPrices,
   getPriceById,
   updatePriceById,
   deletePriceById,
+  deactivatePricesByListItemId,
 };

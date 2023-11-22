@@ -142,10 +142,6 @@ const deleteListById = async (listId) => {
   return list;
 };
 
-const updateListItemQuantity = async (user, listItemId, saleUnitId, quantity) => {
-  await listItemService.updateListItemQuantity(user, listItemId, saleUnitId, quantity);
-};
-
 module.exports = {
   createList,
   queryLists,
@@ -155,5 +151,4 @@ module.exports = {
   updateListName,
   addListItem,
   removeListItem,
-  updateListItemQuantity,
 };

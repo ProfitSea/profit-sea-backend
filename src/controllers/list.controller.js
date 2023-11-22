@@ -15,8 +15,8 @@ const addListItem = catchAsync(async (req, res) => {
 });
 
 const removeListItem = catchAsync(async (req, res) => {
-  const list = await listService.removeListItem(req.user, req.params.listId, req.body.listItemId);
-  res.status(httpStatus.CREATED).send({ list });
+  await listService.removeListItem(req.user, req.params.listId, req.params.listItemId);
+  res.status(httpStatus.OK).send();
 });
 
 const getLists = catchAsync(async (req, res) => {
@@ -58,11 +58,6 @@ const deleteList = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
-const updateListItemQuantity = catchAsync(async (req, res) => {
-  await listService.updateListItemQuantity(req.user, req.body.listItemId, req.body.saleUnitId, req.body.quantity);
-  res.send({ message: 'Quantity updated' });
-});
-
 module.exports = {
   createList,
   getLists,
@@ -72,5 +67,4 @@ module.exports = {
   updateListName,
   addListItem,
   removeListItem,
-  updateListItemQuantity,
 };

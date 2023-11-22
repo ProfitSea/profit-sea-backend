@@ -4,6 +4,7 @@ const { ListItem } = require('../models');
 const ApiError = require('../utils/ApiError');
 const productsService = require('./product.service');
 const pricesService = require('./price.service');
+const logger = require('../config/logger');
 
 /**
  * Get listItem by id
@@ -139,88 +140,72 @@ const updateListItemQuantity = async (user, listItemId, saleUnitId, quantity) =>
     }
   );
 
-  if (updateResult.matchedCount === 0) {
+  if (updateResult.nModified === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found or Sale Unit not found in the list item');
   }
 };
 
 /**
- * Update product price
- * @param {ObjectId} productId
+ * Update ListItem price
+ * @param {ObjectId} listItemId
+ * @param {Array} prices
  * @returns {Promise<Product>}
  */
-// const updateProductsPrice = async (existingProduct, updatedPrices) => {
-//   // Create a map for quick lookup
-//   const existingUnitsMap = Object.fromEntries(existingProduct.saleUnits.map((unit) => [unit.unit, unit]));
+const updateListItemPrice = async (user, listItemId, prices) => {
+  const listItem = await getListItemById(listItemId);
+  if (!listItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
 
-//   // // Validate if all units in updatedPrices exist in the existing product
-//   // const allUnitsExist = updatedPrices.every(({ unit }) => unit in existingUnitsMap);
+  const session = await mongoose.startSession();
+  const transactionOptions = {
+    readPreference: 'primary',
+    readConcern: { level: 'local' },
+    writeConcern: { w: 'majority' },
+  };
 
-//   // if (!allUnitsExist) {
-//   //   throw new ApiError(httpStatus.BAD_REQUEST, 'One or more units in the price array do not exist');
-//   // }
+  try {
+    await session.withTransaction(async () => {
+      // Create new prices and update listItem in parallel
+      const updatePromises = prices.map(async (update) => {
+        const { saleUnitId, price } = update;
 
-//   const session = await mongoose.startSession();
-//   const transactionOptions = {
-//     readPreference: 'primary',
-//     readConcern: { level: 'local' },
-//     writeConcern: { w: 'majority' },
-//   };
+        const saleUnitQuantity = listItem.saleUnitQuantities.find((suq) => suq.saleUnit.id.toString() === saleUnitId);
 
-//   try {
-//     await session.withTransaction(async () => {
-//       const deactivationPromises = updatedPrices
-//         .map((updatedPrice) => {
-//           const existingSaleUnit = existingUnitsMap[updatedPrice.unit];
-//           if (existingSaleUnit && existingSaleUnit.price.price !== updatedPrice.price) {
-//             return priceService.updatePriceById(existingSaleUnit.price._id, { active: false }, session);
-//           }
-//           return Promise.resolve();
-//         })
-//         .filter(Boolean);
+        if (!saleUnitQuantity) {
+          throw new ApiError(httpStatus.BAD_REQUEST, 'Sale Unit not found in the list item');
+        }
 
-//       const newPricePromises = updatedPrices
-//         .map((updatedPrice) => {
-//           const existingSaleUnit = existingUnitsMap[updatedPrice.unit];
-//           if (existingSaleUnit && existingSaleUnit.price.price !== updatedPrice.price) {
-//             return priceService.createPrice(
-//               {
-//                 product: existingProduct._id,
-//                 productSaleUnit: existingSaleUnit._id,
-//                 price: updatedPrice.price,
-//               },
-//               session
-//             );
-//           }
-//           return Promise.resolve();
-//         })
-//         .filter(Boolean);
+        const newPrice = await pricesService.createPrice(
+          {
+            productSaleUnit: saleUnitId,
+            listItem: listItemId,
+            user: listItem.user,
+            price,
+            active: true,
+          },
+          session
+        );
 
-//       const newPrices = await Promise.all(newPricePromises);
+        saleUnitQuantity.price = newPrice._id;
 
-//       const updateSaleUnitPromises = newPrices
-//         .map((newPrice, index) => {
-//           const existingSaleUnit = existingUnitsMap[updatedPrices[index].unit];
-//           if (existingSaleUnit && existingSaleUnit.price.price !== updatedPrices[index].price) {
-//             return productSaleUnitService.updateProductSaleUnitById(existingSaleUnit._id, { price: newPrice._id }, session);
-//           }
-//           return Promise.resolve();
-//         })
-//         .filter(Boolean);
+        // Deactivate old prices
+        await pricesService.deactivatePricesByListItemId(listItemId, saleUnitId, newPrice._id, session);
+      });
 
-//       // Await all deactivations and updates
-//       await Promise.all(deactivationPromises);
-//       await Promise.all(updateSaleUnitPromises);
-//     }, transactionOptions);
+      await Promise.all(updatePromises);
 
-//     return getProductById(existingProduct._id);
-//   } catch (error) {
-//     console.error('Transaction Error: ', error);
-//     throw error;
-//   } finally {
-//     session.endSession();
-//   }
-// };
+      await listItem.save({ session });
+    }, transactionOptions);
+
+    return getListItemById(listItemId);
+  } catch (error) {
+    logger.error('Transaction Error: ', error);
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
 
 module.exports = {
   createListItem,
@@ -229,4 +214,5 @@ module.exports = {
   updateListItemById,
   deleteListItemById,
   updateListItemQuantity,
+  updateListItemPrice,
 };

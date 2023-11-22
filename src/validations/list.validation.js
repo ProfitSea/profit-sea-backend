@@ -62,19 +62,7 @@ const addListItem = {
 const removeListItem = {
   params: Joi.object().keys({
     listId: Joi.string().custom(objectId).required(), // Again, you may want custom objectId validation.
-  }),
-  body: Joi.object()
-    .keys({
-      listItemId: Joi.string().custom(objectId).required(),
-    })
-    .min(1),
-};
-
-const updateListItemQuantity = {
-  body: Joi.object().keys({
     listItemId: Joi.string().custom(objectId).required(),
-    saleUnitId: Joi.string().custom(objectId).required(),
-    quantity: Joi.number().integer().required().greater(0),
   }),
 };
 
@@ -87,5 +75,4 @@ module.exports = {
   updateListName,
   addListItem,
   removeListItem,
-  updateListItemQuantity,
 };
