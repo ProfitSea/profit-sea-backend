@@ -70,6 +70,14 @@ const removeListItem = {
     .min(1),
 };
 
+const updateListItemQuantity = {
+  body: Joi.object().keys({
+    listItemId: Joi.string().custom(objectId).required(),
+    saleUnitId: Joi.string().custom(objectId).required(),
+    quantity: Joi.number().integer().required().greater(0),
+  }),
+};
+
 module.exports = {
   getLists,
   getList,
@@ -79,4 +87,5 @@ module.exports = {
   updateListName,
   addListItem,
   removeListItem,
+  updateListItemQuantity,
 };

@@ -12,6 +12,10 @@ router
   .get(auth(), validate(listValidation.getLists), listController.getLists);
 
 router
+  .route('/list-item/quantity')
+  .patch(auth(), validate(listValidation.updateListItemQuantity), listController.updateListItemQuantity);
+
+router
   .route('/:listId')
   .get(auth(), validate(listValidation.getList), listController.getList)
   .patch(auth(), validate(listValidation.updateList), listController.updateList)
@@ -22,6 +26,6 @@ router.route('/name/:listId').patch(auth(), validate(listValidation.updateListNa
 router
   .route('/list-item/:listId')
   .post(auth(), validate(listValidation.addListItem), listController.addListItem)
-  .delete(auth(), validate(listValidation.removeListItem), listController.removeListItem);
+  .patch(auth(), validate(listValidation.removeListItem), listController.removeListItem);
 
 module.exports = router;

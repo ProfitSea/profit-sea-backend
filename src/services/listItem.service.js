@@ -1,7 +1,9 @@
 const httpStatus = require('http-status');
+const mongoose = require('mongoose');
 const { ListItem } = require('../models');
 const ApiError = require('../utils/ApiError');
 const productsService = require('./product.service');
+const pricesService = require('./price.service');
 
 /**
  * Get listItem by id
@@ -13,9 +15,6 @@ const getListItemById = async (listItemId) => {
     path: 'product',
     populate: {
       path: 'saleUnits',
-      populate: {
-        path: 'price',
-      },
     },
   });
 };
@@ -26,7 +25,7 @@ const getListItemById = async (listItemId) => {
  * @returns {Promise<ListItem>}
  */
 const createListItem = async (user, listId, product) => {
-  const [productObj] = await Promise.all([productsService.createProduct(product)]);
+  const productObj = await productsService.createProduct(product);
   if (!productObj) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
@@ -40,10 +39,29 @@ const createListItem = async (user, listId, product) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Product already in list');
   }
 
-  const saleUnitQuantities = productObj.saleUnits.map((saleUnit) => ({
-    saleUnit: saleUnit.id,
-    quantity: 0,
-  }));
+  const { prices } = product;
+
+  const listItemId = mongoose.Types.ObjectId();
+
+  const saleUnitQuantitiePromises = productObj.saleUnits.map(async (saleUnit) => {
+    const priceObj = prices.find((price) => price.unit === saleUnit.unit);
+    if (priceObj) {
+      const price = await pricesService.createPrice({
+        productSaleUnit: saleUnit.id,
+        price: priceObj.price,
+        listItem: listItemId,
+        user: user.id,
+      });
+      return {
+        saleUnit: saleUnit.id,
+        quantity: 0,
+        price,
+      };
+    }
+    return false;
+  });
+
+  const saleUnitQuantities = await Promise.all(saleUnitQuantitiePromises);
 
   const listItemPayload = {
     user: user.id,
@@ -102,10 +120,28 @@ const deleteListItemById = async (listItemId, userId) => {
   await listItem.remove();
 };
 
+const updateListItemQuantity = async (user, listItemId, saleUnitId, quantity) => {
+  const updateResult = await ListItem.updateOne(
+    {
+      _id: listItemId,
+      user: user.id,
+      'saleUnitQuantities.saleUnit': saleUnitId,
+    },
+    {
+      $set: { 'saleUnitQuantities.$.quantity': quantity },
+    }
+  );
+
+  if (updateResult.matchedCount === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found or Sale Unit not found in the list item');
+  }
+};
+
 module.exports = {
   createListItem,
   queryListItems,
   getListItemById,
   updateListItemById,
   deleteListItemById,
+  updateListItemQuantity,
 };

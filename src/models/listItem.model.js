@@ -29,6 +29,11 @@ const listItemSchema = mongoose.Schema(
           ref: 'ProductSaleUnit',
           required: true,
         },
+        price: {
+          type: mongoose.SchemaTypes.ObjectId,
+          ref: 'Price',
+          required: true,
+        },
         quantity: {
           type: Number,
           default: 0,

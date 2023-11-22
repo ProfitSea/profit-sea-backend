@@ -3,14 +3,19 @@ const { toJSON, paginate } = require('./plugins');
 
 const priceSchema = mongoose.Schema(
   {
-    product: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: 'Products',
-      required: true,
-    },
     productSaleUnit: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: 'ProductSaleUnit',
+      required: true,
+    },
+    listItem: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'ListItem',
+      required: true,
+    },
+    user: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User',
       required: true,
     },
     price: {

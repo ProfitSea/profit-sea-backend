@@ -8,11 +8,6 @@ const productSaleUnitSchema = mongoose.Schema(
       ref: 'Products',
       required: true,
     },
-    price: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: 'Price',
-      required: true,
-    },
     unit: {
       type: String,
       required: true,
