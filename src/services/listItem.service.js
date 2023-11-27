@@ -143,6 +143,17 @@ const updateListItemQuantity = async (user, listItemId, saleUnitId, quantity) =>
   if (updateResult.nModified === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found or Sale Unit not found in the list item');
   }
+
+  // Recalculate the total price
+  const listItem = await ListItem.findById(listItemId).populate('saleUnitQuantities.price');
+  let totalPrice = 0;
+  listItem.saleUnitQuantities.forEach((suq) => {
+    const priceData = suq.price || {}; // Fallback to an empty object if price is not populated
+    totalPrice += suq.quantity * (priceData.price || 0);
+  });
+
+  listItem.totalPrice = Math.round(totalPrice * 100) / 100;
+  await listItem.save();
 };
 
 /**

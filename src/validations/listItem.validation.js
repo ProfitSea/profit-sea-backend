@@ -5,7 +5,7 @@ const updateListItemQuantity = {
   body: Joi.object().keys({
     listItemId: Joi.string().custom(objectId).required(),
     saleUnitId: Joi.string().custom(objectId).required(),
-    quantity: Joi.number().integer().required().greater(0),
+    quantity: Joi.number().integer().required().greater(-1),
   }),
 };
 
