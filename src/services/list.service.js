@@ -28,7 +28,7 @@ const addListItem = async (user, listId, product) => {
   if (!listItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
   }
-  list.listItems.push(listItem);
+  list.listItems.unshift(listItem);
   list.itemsCount = list.listItems.length;
   await list.save();
 
