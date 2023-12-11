@@ -104,37 +104,71 @@ const getListById = async (listId) => {
  */
 const getListAnalysis = async (listId) => {
   console.log('Here we go')
-  const messages = [{"role": "user", "content": "What's the weather like in Boston today?"}];
-  const tools = [
-      {
-        "type": "function",
-        "function": {
-          "name": "get_current_weather",
-          "description": "Get the current weather in a given location",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "location": {
-                "type": "string",
-                "description": "The city and state, e.g. San Francisco, CA",
-              },
-              "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-            },
-            "required": ["location"],
-          },
-        }
-      }
-  ];
+  //Group items from different vendors by categories. Analyze these groups side by side and tell me which item and vendor is a better option based on price, quantity, and quality altogether per group. Just tell me vendor and item only in a chart side by side
+  const text = `
+  Perform an analysis and mark which item is recommended.
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: messages,
-    tools: tools,
-    tool_choice: "auto",
+  Please compare these products by category and tell me which item to buy based on price, quantity, and quality altogether by category.
+
+  Usfoods:
+  $56.43 CS
+  Inteplast
+  Bag, Ice 12x21 Plastic Clear Penguin Stock Print Carry-out
+  #7125028
+  1000 EA per case
+  
+  Sysco:
+  Handgard
+  Bag Ice Poly 18 Inch X 18 Inch 1 Gallon Clear
+  1/300 CT 6864857
+  $62.65 CS
+  ($0.21 / ct)
+
+  Usfoods:
+$28.99 CS
+Packer
+POTATO, FRENCH-FRY 1/2" CRINKLE-CUT FROZEN
+#3351426
+6/5 LB
+$0.06 / OZ
+
+Sysco:
+Sysco Reliance
+by
+Sysco
+Potato Fry Crinkle-cut 1/2"
+6/5LB
+1994294
+$32.00 CS
+($1.07 / lb)
+
+Sysco:
+Golden Crisp
+Appetizer Pickle Chips Breaded
+6/2.5LB
+8902239
+$83.95 CS
+($5.60 / lb)
+
+Usfoods:
+Molly's Kitchen
+APPETIZER, PICKLE BATTERED DILL CHIP TFF RAW FROZEN 35-55 COUNT
+$61.76 CS
+Available Cases: 389
+#3705431
+6/2 LB
+  `
+
+  const response = await openai.completions.create({
+    model: "gpt-3.5-turbo-instruct",
+    prompt: text,
+    max_tokens: 500
   });
 
   console.log(response);
-  return {s: 'here', response}
+  return {s: 'here', response:
+  response.choices[0].text
+}
 };
 
 /**
