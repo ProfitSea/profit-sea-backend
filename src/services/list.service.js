@@ -106,68 +106,93 @@ const getListAnalysis = async (listId) => {
   console.log('Here we go')
   //Group items from different vendors by categories. Analyze these groups side by side and tell me which item and vendor is a better option based on price, quantity, and quality altogether per group. Just tell me vendor and item only in a chart side by side
   const text = `
-  Perform an analysis and mark which item is recommended.
+  group ids from different vendors by product categories and return the ids for these groups. Structure the response as the following: 
+  Category Group # IDs: [ids]
 
-  Please compare these products by category and tell me which item to buy based on price, quantity, and quality altogether by category.
-
-  Usfoods:
-  $56.43 CS
-  Inteplast
-  Bag, Ice 12x21 Plastic Clear Penguin Stock Print Carry-out
-  #7125028
-  1000 EA per case
+  Items:
+  1. Bag, Ice 12x21 Plastic Clear Penguin Stock Print Carry-out:
+     - ID 203
+     - $56.43 CS
+     - Inteplast
+     - vendor: Usfoods
+     - #7125028
+     - 1000 EA per case
   
-  Sysco:
-  Handgard
-  Bag Ice Poly 18 Inch X 18 Inch 1 Gallon Clear
-  1/300 CT 6864857
-  $62.65 CS
-  ($0.21 / ct)
-
-  Usfoods:
-$28.99 CS
-Packer
-POTATO, FRENCH-FRY 1/2" CRINKLE-CUT FROZEN
-#3351426
-6/5 LB
-$0.06 / OZ
-
-Sysco:
-Sysco Reliance
-by
-Sysco
-Potato Fry Crinkle-cut 1/2"
-6/5LB
-1994294
-$32.00 CS
-($1.07 / lb)
-
-Sysco:
-Golden Crisp
-Appetizer Pickle Chips Breaded
-6/2.5LB
-8902239
-$83.95 CS
-($5.60 / lb)
-
-Usfoods:
-Molly's Kitchen
-APPETIZER, PICKLE BATTERED DILL CHIP TFF RAW FROZEN 35-55 COUNT
-$61.76 CS
-Available Cases: 389
-#3705431
-6/2 LB
+  2. Bag Ice Poly 18 Inch X 18 Inch 1 Gallon Clear:
+     - ID 205
+     - Handgard
+     - vendor: Sysco
+     - 1/300 CT 6864857
+     - $62.65 CS
+     - ($0.21 / ct)
+  
+  3. POTATO, FRENCH-FRY 1/2" CRINKLE-CUT FROZEN:
+     - ID 200
+     - $28.99 CS
+     - Packer
+     - vendor: Usfoods
+     - #3351426
+     - 6/5 LB
+     - $0.06 / OZ
+  
+  4. Potato Fry Crinkle-cut 1/2":
+     - ID 206
+     - Sysco Reliance by Sysco
+     - vendor: Sysco
+     - 6/5LB
+     - 1994294
+     - $32.00 CS
+     - ($1.07 / lb)
+  
+  5. Appetizer Pickle Chips Breaded:
+     - ID 212
+     - Golden Crisp
+     - vendor: Sysco
+     - 6/2.5LB
+     - 8902239
+     - $83.95 CS
+     - ($5.60 / lb)
+  
+  6. APPETIZER, PICKLE BATTERED DILL CHIP TFF RAW FROZEN 35-55 COUNT:
+     - ID 123
+     - Molly's Kitchen
+     - vendor: Usfoods
+     - $61.76 CS
+     - Available Cases: 389
+     - #3705431
+     - 6/2 LB
   `
 
   const response = await openai.completions.create({
     model: "gpt-3.5-turbo-instruct",
     prompt: text,
+    temperature: 0.2,
     max_tokens: 500
   });
 
   console.log(response);
+
+// Define a regular expression pattern to match the category and IDs
+const regex = /Category Group (\d+) IDs: (\[[^\]]+\])/g;
+
+// Initialize an array to store the results
+const result = [];
+
+// Use the regular expression to find matches in the input string
+let match;
+while ((match = regex.exec(response.choices[0].text)) !== null) {
+  const category = match[1];
+  const idsString = match[2];
+  
+  // Parse the IDs from the string to a JavaScript array
+  const ids = JSON.parse(idsString);
+
+  // Add the result to the array
+  result.push({ category, ids });
+}
+
   return {s: 'here', response:
-  response.choices[0].text
+  result
 }
 };
 
