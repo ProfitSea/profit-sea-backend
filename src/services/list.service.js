@@ -104,63 +104,81 @@ const getListById = async (listId) => {
  */
 const getListAnalysis = async (listId) => {
   console.log('Here we go')
+  const list = await getListById(listId);
+  const items = list?.listItems?.map(({vendor, product, totalPrice, saleUnitQuantities})=>({
+    name: `${product?.brand} ${product?.description}`,
+    id: product?.id,
+    vendor,
+    totalPrice,
+    packSize: product?.packSize,
+    quantity: saleUnitQuantities[0]?.quantity,
+    price: `${saleUnitQuantities[0]?.price?.price} / ${saleUnitQuantities[0]?.saleUnit?.unit}`
+
+  }))
   //Group items from different vendors by categories. Analyze these groups side by side and tell me which item and vendor is a better option based on price, quantity, and quality altogether per group. Just tell me vendor and item only in a chart side by side
+  // const text = `
+  // group ids from different vendors by product categories and return the ids for these groups. Structure the response as the following: 
+  // Category Group # IDs: [ids]
+
+  // Items:
+  // 1. Bag, Ice 12x21 Plastic Clear Penguin Stock Print Carry-out:
+  //    - ID 203
+  //    - $56.43 CS
+  //    - Inteplast
+  //    - vendor: Usfoods
+  //    - #7125028
+  //    - 1000 EA per case
+  
+  // 2. Bag Ice Poly 18 Inch X 18 Inch 1 Gallon Clear:
+  //    - ID 205
+  //    - Handgard
+  //    - vendor: Sysco
+  //    - 1/300 CT 6864857
+  //    - $62.65 CS
+  //    - ($0.21 / ct)
+  
+  // 3. POTATO, FRENCH-FRY 1/2" CRINKLE-CUT FROZEN:
+  //    - ID 200
+  //    - $28.99 CS
+  //    - Packer
+  //    - vendor: Usfoods
+  //    - #3351426
+  //    - 6/5 LB
+  //    - $0.06 / OZ
+  
+  // 4. Potato Fry Crinkle-cut 1/2":
+  //    - ID 206
+  //    - Sysco Reliance by Sysco
+  //    - vendor: Sysco
+  //    - 6/5LB
+  //    - 1994294
+  //    - $32.00 CS
+  //    - ($1.07 / lb)
+  
+  // 5. Appetizer Pickle Chips Breaded:
+  //    - ID 212
+  //    - Golden Crisp
+  //    - vendor: Sysco
+  //    - 6/2.5LB
+  //    - 8902239
+  //    - $83.95 CS
+  //    - ($5.60 / lb)
+  
+  // 6. APPETIZER, PICKLE BATTERED DILL CHIP TFF RAW FROZEN 35-55 COUNT:
+  //    - ID 123
+  //    - Molly's Kitchen
+  //    - vendor: Usfoods
+  //    - $61.76 CS
+  //    - Available Cases: 389
+  //    - #3705431
+  //    - 6/2 LB
+  // `
   const text = `
-  group ids from different vendors by product categories and return the ids for these groups. Structure the response as the following: 
+  group ids from different vendors by product categories and return the ID for these groups. Structure the response as the following: 
   Category Group # IDs: [ids]
 
   Items:
-  1. Bag, Ice 12x21 Plastic Clear Penguin Stock Print Carry-out:
-     - ID 203
-     - $56.43 CS
-     - Inteplast
-     - vendor: Usfoods
-     - #7125028
-     - 1000 EA per case
-  
-  2. Bag Ice Poly 18 Inch X 18 Inch 1 Gallon Clear:
-     - ID 205
-     - Handgard
-     - vendor: Sysco
-     - 1/300 CT 6864857
-     - $62.65 CS
-     - ($0.21 / ct)
-  
-  3. POTATO, FRENCH-FRY 1/2" CRINKLE-CUT FROZEN:
-     - ID 200
-     - $28.99 CS
-     - Packer
-     - vendor: Usfoods
-     - #3351426
-     - 6/5 LB
-     - $0.06 / OZ
-  
-  4. Potato Fry Crinkle-cut 1/2":
-     - ID 206
-     - Sysco Reliance by Sysco
-     - vendor: Sysco
-     - 6/5LB
-     - 1994294
-     - $32.00 CS
-     - ($1.07 / lb)
-  
-  5. Appetizer Pickle Chips Breaded:
-     - ID 212
-     - Golden Crisp
-     - vendor: Sysco
-     - 6/2.5LB
-     - 8902239
-     - $83.95 CS
-     - ($5.60 / lb)
-  
-  6. APPETIZER, PICKLE BATTERED DILL CHIP TFF RAW FROZEN 35-55 COUNT:
-     - ID 123
-     - Molly's Kitchen
-     - vendor: Usfoods
-     - $61.76 CS
-     - Available Cases: 389
-     - #3705431
-     - 6/2 LB
+  ${JSON.stringify(items)}
   `
 
   const response = await openai.completions.create({
@@ -191,7 +209,7 @@ while ((match = regex.exec(response.choices[0].text)) !== null) {
   result.push({ category, ids });
 }
 
-  return {s: 'here', response:
+  return {items, response:
   result
 }
 };
