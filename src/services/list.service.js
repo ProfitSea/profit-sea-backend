@@ -28,8 +28,39 @@ const addListItem = async (user, listId, product) => {
   if (!list) {
     throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
   }
+  const prompt = `Tell me under which category does this product ${product?.brand} ${product?.description} fall under
+  Categories: 
+  Meats
+  Seafood
+  Produce
+  Dairy Products
+  Bakery and Bread
+  Dry Goods and Grains
+  Canned and Jarred Goods
+  Condiments and Sauces
+  Beverages
+  Frozen Foods
+  Oils and Fats
+  Specialty Items
+  Cleaning Supplies
+  Paper Goods
+  Kitchen Essentials
+  Bar Supplies
+  Coffee and Tea
+  Alcohol
+  Dessert items
 
-  const listItem = await listItemService.createListItem(user, listId, product);
+  Structure the response as the following: "Category"
+  `
+  //get product's category
+  const response = await openai.completions.create({
+    model: "gpt-3.5-turbo-instruct",
+    prompt,
+    temperature: 0.2,
+    max_tokens: 500
+  });
+  const productItem = {...product, category: response?.choices[0].text.trim()}
+  const listItem = await listItemService.createListItem(user, listId, productItem);
 
   if (!listItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');

@@ -42,7 +42,7 @@ const createProduct = async (productBody) => {
   let product;
   try {
     await session.withTransaction(async () => {
-      const { prices: saleUnits, vendor, imgSrc, brand, description, productNumber, packSize } = productBody;
+      const { prices: saleUnits, vendor, imgSrc, brand, description, productNumber, packSize, category } = productBody;
 
       const productId = mongoose.Types.ObjectId();
 
@@ -73,6 +73,7 @@ const createProduct = async (productBody) => {
         description,
         productNumber,
         packSize,
+        category,
         _id: productId,
       });
       await product.save({ session });
