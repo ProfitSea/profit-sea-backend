@@ -4,6 +4,7 @@ const ApiError = require('../utils/ApiError');
 const listItemService = require('./listItem.service');
 const OpenAI = require('openai');
 const config = require('../config/config');
+const { updateProductById } = require('./product.service');
 
 const openai = new OpenAI({
   apiKey: config.openAi.key,
@@ -30,25 +31,68 @@ const addListItem = async (user, listId, product) => {
   }
   const prompt = `Tell me under which category does this product ${product?.brand} ${product?.description} fall under
   Categories: 
-  Meats
-  Seafood
-  Produce
-  Dairy Products
-  Bakery and Bread
-  Dry Goods and Grains
-  Canned and Jarred Goods
-  Condiments and Sauces
-  Beverages
-  Frozen Foods
-  Oils and Fats
-  Specialty Items
-  Cleaning Supplies
-  Paper Goods
-  Kitchen Essentials
-  Bar Supplies
-  Coffee and Tea
-  Alcohol
-  Dessert items
+Beef
+Pork
+Poultry
+Lamb
+Exotic meats
+Fish
+Shellfish
+Other seafood items
+Fresh fruits
+Fresh vegetables
+Herbs
+Milk
+Cheese
+Butter
+Cream
+Bread
+Rolls
+Pastries
+Baked goods
+Rice
+Pasta
+Flour
+Sugar
+Vegetables
+Fruits
+Sauces
+Preserves
+Ketchup
+Mustard
+Mayonnaise
+Salad dressings
+Cooking sauces
+Spices
+Soft drinks
+Juices
+Bottled water
+Alcoholic beverages (Wine, Beer)
+Ice cream
+Frozen vegetables
+Other frozen products
+Cooking oils
+Lard
+Other fats
+Tofu
+Ethnic spices
+Regional ingredients
+Detergents
+Sanitizers
+Cleaning tools
+Napkins
+Paper towels
+Toilet paper
+Disposable items
+To-go Containers
+Cooking utensils
+Pots
+Pans
+Mixers
+Spirits
+Bar tools
+Coffee varieties
+Tea varieties
 
   Structure the response as the following: "Category"
   `
@@ -127,6 +171,87 @@ const getListById = async (listId) => {
       },
     ],
   });
+  // for (let index = 0; index < list.listItems.length; index++) {
+  //   const element = list.listItems[index];
+  //   if(!element?.product?.category){
+  //       const prompt = `Tell me under which category does this product ${element?.product?.brand} ${element?.product?.description} fall under
+  //     Categories: 
+  //   Beef
+  //   Pork
+  //   Poultry
+  //   Lamb
+  //   Exotic meats
+  //   Fish
+  //   Shellfish
+  //   Other seafood items
+  //   Fresh fruits
+  //   Fresh vegetables
+  //   Herbs
+  //   Milk
+  //   Cheese
+  //   Butter
+  //   Cream
+  //   Bread
+  //   Rolls
+  //   Pastries
+  //   Baked goods
+  //   Rice
+  //   Pasta
+  //   Flour
+  //   Sugar
+  //   Vegetables
+  //   Fruits
+  //   Sauces
+  //   Preserves
+  //   Ketchup
+  //   Mustard
+  //   Mayonnaise
+  //   Salad dressings
+  //   Cooking sauces
+  //   Spices
+  //   Soft drinks
+  //   Juices
+  //   Bottled water
+  //   Alcoholic beverages (Wine, Beer)
+  //   Ice cream
+  //   Frozen vegetables
+  //   Other frozen products
+  //   Cooking oils
+  //   Lard
+  //   Other fats
+  //   Tofu
+  //   Ethnic spices
+  //   Regional ingredients
+  //   Detergents
+  //   Sanitizers
+  //   Cleaning tools
+  //   Napkins
+  //   Paper towels
+  //   Toilet paper
+  //   Disposable items
+  //   To-go Containers
+  //   Cooking utensils
+  //   Pots
+  //   Pans
+  //   Mixers
+  //   Spirits
+  //   Bar tools
+  //   Coffee varieties
+  //   Tea varieties
+    
+  //     Structure the response as the following: "Category"
+  //     `
+  //     //get product's category
+  //     const response = await openai.completions.create({
+  //       model: "gpt-3.5-turbo-instruct",
+  //       prompt,
+  //       temperature: 0.2,
+  //       max_tokens: 500
+  //     });
+  //     console.log({productId: element?.product?.id, category: response?.choices[0].text.trim()})
+  //       updateProductById(element?.product?.id, {category: response?.choices[0].text.trim()})
+  //   }
+  // }
 };
 /**
  * Get list by id
@@ -141,8 +266,8 @@ const getListAnalysis = async (listId) => {
     if (!acc[category]) {
       acc[category] = [];
     }
-  
-    acc[category].push(element?.product);
+    const item = Object.assign({totalPrice: element?.totalPrice, price: element?.saleUnitQuantities[0].price?.price, quantity: element?.saleUnitQuantities[0].quantity, unit: element?.saleUnitQuantities[0]?.saleUnit?.unit},{product: element?.product})
+    acc[category].push(item);
     return acc;
   },{});
   const categorizedList = [];
@@ -150,48 +275,59 @@ const getListAnalysis = async (listId) => {
     const category = categories[key];
     categorizedList.push(category);
   })
-// for (let index = 0; index < categorizedList.length; index++) {
-//   const element = categorizedList[index];
-//   const products = element.map((product)=> `ID ${product?.id} product ${product?.brand} ${product?.description}`)
-//     const text = `
-//   group ids from different vendors by product categories and return the ID for these groups. Structure the response as the following: 
-//   Category Group # IDs: [ids]
+const result = [];
+for (let index = 0; index < categorizedList.length; index++) {
+  const element = categorizedList[index];
+  const products = element.map(({product})=> `${product?.vendor} ${product?.brand} ${product?.description} productNumber: ${product?.productNumber}`)
+  console.log({products: products.join(',')})
 
-//   Items:
-//   ${JSON.stringify(products)}
-//   `
-
-//   const response = await openai.completions.create({
-//     model: "gpt-3.5-turbo-instruct",
-//     prompt: text,
-//     temperature: 0.2,
-//     max_tokens: 500
-//   });
-
-//   console.log(response);
+  const response = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [{role: 'system', content: `Review and group these product items per one category for side by side comparison.  Structure the response as the following: [
+      {
+        category: 'tomatoes',
+        productNumbers: []
+      }
+      ]
+    `},
   
-// }
+  {
+    role: 'user',
+    content: `${products.join()}`
+  }],
+    temperature: 0.2,
+    max_tokens: 150,
+    n: 1
+  });
 
-// // Define a regular expression pattern to match the category and IDs
-// const regex = /Category Group (\d+) IDs: (\[[^\]]+\])/g;
-
-// // Initialize an array to store the results
-// const result = [];
-
-// // Use the regular expression to find matches in the input string
-// let match;
-// while ((match = regex.exec(response.choices[0].text)) !== null) {
-//   const category = match[1];
-//   const idsString = match[2];
+  console.log(response?.choices[0].message);
+  const products2 = element.map(({product, totalPrice, price, unit, quantity})=> `productNumber: ${product?.productNumber} $${price}/${unit} $${totalPrice} per case Qty: ${quantity}`)
+  console.log({products2})
+  const response2 = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [{role: 'system', content: `Take this product category and analyze it to identify specific similar products to compare side by side, and make a recommendation on which product to purchase base on the info provided.
+    Here is the subcategories of the products:.  Structure the response as the following: [
+      {
+        category: <category>,
+        recommendedProductNumber: <number>
+      }
+      ]
+    `},
   
-//   // Parse the IDs from the string to a JavaScript array
-//   const ids = JSON.parse(idsString);
+  {
+    role: 'user',
+    content: `${products2.join()}`
+  }],
+    temperature: 0.2,
+    max_tokens: 150,
+    n: 1
+  });
+  console.log(response2?.choices[0].message)
+}
 
-//   // Add the result to the array
-//   result.push({ category, ids });
-// }
 
   return {
+    result,
   categorizedList
 }
 };
