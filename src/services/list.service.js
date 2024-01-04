@@ -259,8 +259,8 @@ const getListById = async (listId) => {
  * @returns {Promise<List>}
  */
 const getListAnalysis = async (listId) => {
-  console.log('Here we go')
   const list = await getListById(listId);
+  //group products into categories
   const categories = list?.listItems?.reduce((acc, element)=>{
     const category = element?.product?.category;
     if (!acc[category]) {
@@ -271,65 +271,66 @@ const getListAnalysis = async (listId) => {
     return acc;
   },{});
   const categorizedList = [];
+  // get categories into an array
   Object.keys(categories).forEach((key) => {
     const category = categories[key];
     categorizedList.push(category);
   })
+
 const result = [];
+
 for (let index = 0; index < categorizedList.length; index++) {
   const element = categorizedList[index];
   const products = element.map(({product})=> `${product?.vendor} ${product?.brand} ${product?.description} productNumber: ${product?.productNumber}`)
   console.log({products: products.join(',')})
-
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [{role: 'system', content: `Review and group these product items per one category for side by side comparison.  Structure the response as the following: [
+  if(products.length > 1){
+    // ask ai to group products into subcategories
+      const subcategories = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{role: 'system', content: `Review and group these product items per one category for side by side comparison.  Structure the response as the following: ["<productNumbers separated by commas>"]
+        `},
+      
       {
-        category: 'tomatoes',
-        productNumbers: []
-      }
-      ]
-    `},
-  
-  {
-    role: 'user',
-    content: `${products.join()}`
-  }],
-    temperature: 0.2,
-    max_tokens: 150,
-    n: 1
-  });
+        role: 'user',
+        content: `${products.join()}`
+      }],
+        temperature: 0.2,
+        max_tokens: 150,
+        n: 1
+      });
 
-  console.log(response?.choices[0].message);
-  const products2 = element.map(({product, totalPrice, price, unit, quantity})=> `productNumber: ${product?.productNumber} $${price}/${unit} $${totalPrice} per case Qty: ${quantity}`)
-  console.log({products2})
-  const response2 = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [{role: 'system', content: `Take this product category and analyze it to identify specific similar products to compare side by side, and make a recommendation on which product to purchase base on the info provided.
-    Here is the subcategories of the products:.  Structure the response as the following: [
+      const productGroups = JSON.parse(subcategories?.choices[0].message.content)[0].split(",").map((item) => item.trim());
+      const productsInfo = element.map(({product, totalPrice, price, unit, quantity})=> `productNumber: ${product?.productNumber} $${price}/${unit}, ${product?.packSize}/${unit}, Qty: ${quantity}, Total $${totalPrice}`)
+      // ask ai to recommend one out of the subcategory
+      const recommendation = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{role: 'system', content: `Take this product category and analyze it to identify specific similar products to compare side by side, and make a recommendation on which product to purchase base on the info provided.
+        Here is the subcategories of the products:.  Structure the response as the following: ["<recommendedProductNumber>", "<20 words or less reason why it's recommended>"]
+        `},
+      
       {
-        category: <category>,
-        recommendedProductNumber: <number>
-      }
-      ]
-    `},
-  
-  {
-    role: 'user',
-    content: `${products2.join()}`
-  }],
-    temperature: 0.2,
-    max_tokens: 150,
-    n: 1
-  });
-  console.log(response2?.choices[0].message)
+        role: 'user',
+        content: `${productsInfo.join()}`
+      }],
+        temperature: 0.2,
+        max_tokens: 150,
+        n: 1
+      });
+      const recommendedProduct = JSON.parse(recommendation?.choices[0].message.content);
+      // group items per subcategory and flag recommended one.
+      const items = element
+      .filter((item) => productGroups.find(text => item.product.productNumber.includes(text)))
+      .map((item) => ({
+        ...item,
+        recommended: recommendedProduct[0] === item.product.productNumber,
+        recommendedReason:  recommendedProduct[0] === item.product.productNumber ? recommendedProduct[1] : '' 
+      }))
+      result.push(items)
+  } else {
+    result.push(element)
+  }
 }
-
-
-  return {
-    result,
-  categorizedList
-}
+  return result;
 };
 
 /**
