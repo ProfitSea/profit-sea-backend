@@ -305,7 +305,7 @@ for (let index = 0; index < categorizedList.length; index++) {
       const recommendation = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [{role: 'system', content: `Take this product category and analyze it to identify specific similar products to compare side by side, and make a recommendation on which product to purchase base on the info provided.
-        Here is the subcategories of the products:.  Structure the response as the following: ["<recommendedProductNumber>", "<20 words or less reason why it's recommended>"]
+        Here is the subcategories of the products:.  Structure the response as the following: ["<recommendedProductNumber>", "<20 words or less reason why it's recommended, include savings>"]
         `},
       
       {
