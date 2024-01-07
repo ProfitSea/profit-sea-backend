@@ -6,6 +6,8 @@ const listItemController = require('../../controllers/lisItem.controller');
 
 const router = express.Router();
 
+router.route('/').get(auth(), validate(listItemValidation.getListItem), listItemController.getListItem);
+
 router
   .route('/quantity')
   .patch(auth(), validate(listItemValidation.updateListItemQuantity), listItemController.updateListItemQuantity);

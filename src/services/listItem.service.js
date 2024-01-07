@@ -218,6 +218,38 @@ const updateListItemPrice = async (user, listItemId, prices) => {
   }
 };
 
+const findListItemByProductNumber = async (user, { productNumber }) => {
+  const result = await ListItem.aggregate([
+    // Lookup to join with the Products collection
+    {
+      $lookup: {
+        from: 'products', // the collection to join
+        localField: 'product', // field from the ListItem collection
+        foreignField: '_id', // field from the Products collection
+        as: 'product', // the array to put the joined documents
+      },
+    },
+    // Match the user's ID in the ListItem collection
+    {
+      $match: {
+        user: user._id,
+        'product.productNumber': `#${productNumber}`,
+      },
+    },
+    // Unwind the product array to deconstruct the array
+    {
+      $unwind: '$product',
+    },
+  ]);
+  const listItem = result[0] || null;
+
+  if (!listItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+
+  return listItem;
+};
+
 module.exports = {
   createListItem,
   queryListItems,
@@ -226,4 +258,5 @@ module.exports = {
   deleteListItemById,
   updateListItemQuantity,
   updateListItemPrice,
+  findListItemByProductNumber,
 };

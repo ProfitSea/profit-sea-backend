@@ -1,6 +1,12 @@
 const Joi = require('joi');
 const { objectId } = require('./custom.validation');
 
+const getListItem = {
+  query: {
+    productNumber: Joi.string().required(),
+  },
+};
+
 const updateListItemQuantity = {
   body: Joi.object().keys({
     listItemId: Joi.string().custom(objectId).required(),
@@ -24,4 +30,5 @@ const updateListItemPrice = {
 module.exports = {
   updateListItemQuantity,
   updateListItemPrice,
+  getListItem,
 };
