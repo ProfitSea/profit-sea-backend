@@ -12,8 +12,8 @@ const updateListItemPrice = catchAsync(async (req, res) => {
 });
 
 const getListItem = catchAsync(async (req, res) => {
-  const listItem = await listItemService.findListItemByProductNumber(req.user, req.query);
-  res.send({ listItem });
+  const listItems = await listItemService.findListItemsByProductNumber(req.user, req.query);
+  res.send({ listItems });
 });
 
 module.exports = {
