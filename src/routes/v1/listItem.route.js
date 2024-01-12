@@ -6,7 +6,16 @@ const listItemController = require('../../controllers/lisItem.controller');
 
 const router = express.Router();
 
-router.route('/').get(auth(), validate(listItemValidation.getListItem), listItemController.getListItem);
+router
+  .route('/')
+  .get(auth(), validate(listItemValidation.getListItem), listItemController.getListItem)
+  .patch(
+    auth(),
+    validate(listItemValidation.updateListItemPricesByProductNumber),
+    listItemController.updateListItemPricesByProductNumber
+  );
+
+router.route('/:id').get(auth(), listItemController.getListItemById);
 
 router
   .route('/quantity')

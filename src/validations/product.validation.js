@@ -80,4 +80,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   productSchema,
+  priceValidation,
 };
