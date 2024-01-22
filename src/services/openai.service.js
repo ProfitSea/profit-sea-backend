@@ -84,6 +84,34 @@ class OpenAiService {
     });
     return response?.choices[0].text.trim();
   }
+
+  async getSubCategories(products) {
+    const subcategories = await this.openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: `Review and group these product items per one category for side by side comparison.  Structure the response as the following: ["<productNumbers separated by commas>"]
+      `,
+        },
+
+        {
+          role: 'user',
+          content: `${products.join()}`,
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 150,
+      n: 1,
+    });
+    console.log('subcategories?.choices[0]!--------------:');
+    console.log(subcategories?.choices[0]);
+    console.log({ subcategories: subcategories?.choices[0].message.content });
+    const productGroups = JSON.parse(subcategories?.choices[0].message.content)[0]
+      .split(',')
+      .map((item) => item.trim());
+    return productGroups;
+  }
 }
 
 module.exports = OpenAiService;
