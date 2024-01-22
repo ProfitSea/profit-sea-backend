@@ -200,6 +200,7 @@ const getListAnalysis = async (listId) => {
   //group products into categories
   const categories = list?.listItems?.reduce((acc, element) => {
     const category = element?.product?.category;
+    if (!category) return acc;
     if (!acc[category]) {
       acc[category] = [];
     }
@@ -225,64 +226,49 @@ const getListAnalysis = async (listId) => {
   // console.log('typeof categories');
   // console.log(typeof categories);
   // console.log({ categoriesLenght: categories.length });
-  // console.log({ categories });
+  console.log({ categories });
 
   const categorizedList = Object.values(categories);
 
-  console.log('categorizedList.length)');
+  // console.log('categorizedList.length)');
+  // console.log({ categorizedList });
+  // console.log('categorizedList[0]');
+  // console.log(categorizedList[0]);
+  console.warn('categorizedList.length: ', categorizedList.length);
   // console.log(typeof categorizedList);
-  // console.log(categorizedList.length);
   // console.log(categorizedList[0][0]);
 
   const result = [];
   for (let index = 0; index < categorizedList.length; index++) {
-    const element = categorizedList[index];
-    const products = element.map(({ product }) => {
-      console.log('vendor: ', product?.vendor);
-      console.log('brand: ', product?.brand);
-      console.log('description: ', product?.description);
-      console.log('productNumber: ', product?.productNumber);
+    const productsByCategory = categorizedList[index];
+    const products = productsByCategory.map(({ product }) => {
+      // console.log('vendor: ', product?.vendor);
+      // console.log('brand: ', product?.brand);
+      // console.log('description: ', product?.description);
+      // console.log('productNumber: ', product?.productNumber);
       return `${product?.vendor} ${product?.brand} ${product?.description} productNumber: ${product?.productNumber}`;
     });
 
-    console.log({ products });
+    // console.log({ products });
     // console.log({ products: products.join('|') });
     if (products.length > 1) {
       // ask ai to group products into subcategories
-
       const openAiService = new OpenAiService();
       const productGroups = await openAiService.getSubCategories(products);
-      console.log({ productGroups });
+      // console.log({ productGroups });
 
-      const productsInfo = element.map(
+      const productsInfo = productsByCategory.map(
         ({ product, totalPrice, price, unit, quantity }) =>
           `productNumber: ${product?.productNumber} $${price}/${unit}, ${product?.packSize}/${unit}, Qty: ${quantity}, Total $${totalPrice}`
       );
       // ask ai to recommend one out of the subcategory
-      const recommendation = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: `Take this product category and analyze it to identify specific similar products to compare side by side, and make a recommendation on which product to purchase base on the info provided.
-        Here is the subcategories of the products:.  Structure the response as the following: ["<recommendedProductNumber>", "<20 words or less reason why it's recommended, include savings>"]
-        `,
-          },
 
-          {
-            role: 'user',
-            content: `${productsInfo.join()}`,
-          },
-        ],
-        temperature: 0.2,
-        max_tokens: 150,
-        n: 1,
-      });
-      const recommendedProduct = JSON.parse(recommendation?.choices[0].message.content);
-      console.log('');
-      console.log({ recommendedProduct });
+      const recommendedProduct = await openAiService.getRecomendation(productsInfo.join());
+
+      console.log('productGroups!!!!');
+      console.log({ productGroups });
       // group items per subcategory and flag recommended one.
-      const items = element
+      const items = productsByCategory
         .filter((item) => productGroups.find((text) => item.product.productNumber.includes(text)))
         .map((item) => ({
           ...item,
@@ -291,7 +277,7 @@ const getListAnalysis = async (listId) => {
         }));
       result.push(items);
     } else {
-      result.push(element);
+      result.push(productsByCategory);
     }
   }
   return result;

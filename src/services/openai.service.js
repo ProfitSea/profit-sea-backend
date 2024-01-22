@@ -86,12 +86,14 @@ class OpenAiService {
   }
 
   async getSubCategories(products) {
+    console.log({ products });
     const subcategories = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
-          content: `Review and group these product items per one category for side by side comparison.  Structure the response as the following: ["<productNumbers separated by commas>"]
+          // content: `Review and group these product items per one category for side by side comparison.  Structure the response as the following: ["<productNumbers separated by commas>"]
+          content: `Review and group these product items per one category for side by side comparison. Treat the product numbers as numerical values. Structure the response as the following: ["productNumbers separated by commas"]"]
       `,
         },
 
@@ -105,12 +107,37 @@ class OpenAiService {
       n: 1,
     });
     console.log('subcategories?.choices[0]!--------------:');
-    console.log(subcategories?.choices[0]);
+    console.log({ subcategories });
     console.log({ subcategories: subcategories?.choices[0].message.content });
     const productGroups = JSON.parse(subcategories?.choices[0].message.content)[0]
       .split(',')
       .map((item) => item.trim());
     return productGroups;
+  }
+
+  async getRecomendation(productsInfo) {
+    const recommendation = await this.openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: `Take this product category and analyze it to identify specific similar products to compare side by side, and make a recommendation on which product to purchase base on the info provided.
+      Here is the subcategories of the products:.  Structure the response as the following: ["<recommendedProductNumber>", "<20 words or less reason why it's recommended, include savings>"]
+      `,
+        },
+
+        {
+          role: 'user',
+          content: `${productsInfo}`,
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 150,
+      n: 1,
+    });
+    const recommendedProduct = JSON.parse(recommendation?.choices[0].message.content);
+    console.log({ recommendedProduct });
+    return recommendedProduct;
   }
 }
 
