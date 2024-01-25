@@ -11,68 +11,19 @@ class OpenAiService {
   async getProductCategory(brand, description) {
     const prompt = `Tell me under which category does this product ${brand} ${description} fall under
       Categories:
-        Beef
-        Pork
-        Poultry
-        Lamb
-        Exotic meats
-        Fish
-        Shellfish
-        Other seafood items
-        Fresh fruits
-        Fresh vegetables
-        Herbs
-        Milk
-        Cheese
-        Butter
-        Cream
-        Bread
-        Rolls
-        Pastries
-        Baked goods
-        Rice
-        Pasta
-        Flour
-        Sugar
-        Vegetables
-        Fruits
-        Sauces
-        Preserves
-        Ketchup
-        Mustard
-        Mayonnaise
-        Salad dressings
-        Cooking sauces
-        Spices
-        Soft drinks
-        Juices
-        Bottled water
-        Alcoholic beverages (Wine, Beer)
-        Ice cream
-        Frozen vegetables
-        Other frozen products
-        Cooking oils
-        Lard
-        Other fats
-        Tofu
-        Ethnic spices
-        Regional ingredients
-        Detergents
-        Sanitizers
-        Cleaning tools
-        Napkins
-        Paper towels
-        Toilet paper
-        Disposable items
-        To-go Containers
-        Cooking utensils
-        Pots
-        Pans
-        Mixers
-        Spirits
-        Bar tools
-        Coffee varieties
-        Tea varieties
+        Meat and Poultry
+        Seafood
+        Produce
+        Dairy and Cheese
+        Bakery
+        Grains and Staples
+        Canned and Jarred Goods
+        Condiments
+        Beverages
+        Frozen Foods
+        Cooking Essentials(oil, lard, fats)
+        Disposable Items
+        Kitchen Tools and Utensils
       Structure the response as the following: "Category"
     `;
     //get product's category
@@ -86,7 +37,6 @@ class OpenAiService {
   }
 
   async getSubCategories(products) {
-    console.log({ products });
     const subcategories = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -106,9 +56,9 @@ class OpenAiService {
       max_tokens: 150,
       n: 1,
     });
-    console.log('subcategories?.choices[0]!--------------:');
-    console.log({ subcategories });
-    console.log({ subcategories: subcategories?.choices[0].message.content });
+    // console.log('subcategories?.choices[0]!--------------:');
+    // console.log({ subcategories });
+    // console.log({ subcategories: subcategories?.choices[0].message.content });
     const productGroups = JSON.parse(subcategories?.choices[0].message.content)[0]
       .split(',')
       .map((item) => item.trim());
@@ -136,7 +86,8 @@ class OpenAiService {
       n: 1,
     });
     const recommendedProduct = JSON.parse(recommendation?.choices[0].message.content);
-    console.log({ recommendedProduct });
+    // console.log({ recommendation });
+    // console.log({ recommendedProduct });
     return recommendedProduct;
   }
 }
