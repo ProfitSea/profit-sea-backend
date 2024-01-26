@@ -34,8 +34,11 @@ const addListItem = async (user, listId, product) => {
 
   const openAiService = new OpenAiService();
   const category = await openAiService.getProductCategory(product?.brand, product?.description);
+  const normalizedDescription = await openAiService.getNormalizedDescription(product?.brand, product?.description);
 
-  const productItem = { ...product, category: category };
+  const productItem = { ...product, category, normalizedDescription };
+  console.log('product item to add->>');
+  console.log(productItem);
   const listItem = await listItemService.createListItem(user, listId, productItem);
 
   console.log('open ai');
@@ -226,15 +229,16 @@ const getListAnalysis = async (listId) => {
   // console.log('typeof categories');
   // console.log(typeof categories);
   // console.log({ categoriesLenght: categories.length });
+  console.log('1. group products into categories ');
   console.log({ categories });
-
+  console.log('');
   const categorizedList = Object.values(categories);
 
   // console.log('categorizedList.length)');
   // console.log({ categorizedList });
   // console.log('categorizedList[0]');
   // console.log(categorizedList[0]);
-  console.warn('categorizedList.length: ', categorizedList.length);
+  // console.warn('categorizedList.length: ', categorizedList.length);
   // console.log(typeof categorizedList);
   // console.log(categorizedList[0][0]);
 
@@ -246,36 +250,53 @@ const getListAnalysis = async (listId) => {
       // console.log('brand: ', product?.brand);
       // console.log('description: ', product?.description);
       // console.log('productNumber: ', product?.productNumber);
-      return `${product?.vendor} ${product?.brand} ${product?.description} productNumber: ${product?.productNumber}`;
+      return `${product?.vendor} <> ${product?.brand} <> ${product?.description} <> productNumber: ${product?.productNumber}`;
     });
 
     // console.log({ products });
     // console.log({ products: products.join('|') });
+    console.log({ products });
     if (products.length > 1) {
       // ask ai to group products into subcategories
       const openAiService = new OpenAiService();
+      console.log('2. ask ai to group products into subcategories');
       const productGroups = await openAiService.getSubCategories(products);
-      // console.log({ productGroups });
+      console.log({ subCategories: productGroups });
+      console.log('');
 
       const productsInfo = productsByCategory.map(
         ({ product, totalPrice, price, unit, quantity }) =>
           `productNumber: ${product?.productNumber} $${price}/${unit}, ${product?.packSize}/${unit}, Qty: ${quantity}, Total $${totalPrice}`
       );
       // ask ai to recommend one out of the subcategory
+      console.log({ productsInfo });
+      console.log(productsInfo.join());
+      console.log('');
 
+      console.log('3. ask ai to recommend one out of the subcategory');
       const recommendedProduct = await openAiService.getRecomendation(productsInfo.join());
+      console.log({ recommendedProduct });
+      console.log('');
 
-      console.log('productGroups!!!!');
-      console.log({ productGroups });
       // group items per subcategory and flag recommended one.
+      console.log('4. group items per subcategory and flag recommended one.');
+
       const items = productsByCategory
-        .filter((item) => productGroups.find((text) => item.product.productNumber.includes(text)))
+        .filter((item) =>
+          productGroups.find((text) => {
+            console.log({ text });
+            return item.product.productNumber.includes(text);
+          })
+        )
         .map((item) => ({
           ...item,
           recommended: recommendedProduct[0] === item.product.productNumber,
           recommendedReason: recommendedProduct[0] === item.product.productNumber ? recommendedProduct[1] : '',
         }));
       result.push(items);
+
+      console.log({ result });
+      console.log('');
     } else {
       result.push(productsByCategory);
     }
