@@ -249,7 +249,10 @@ const findListItemsByProductNumber = async (user, { productNumber }) => {
     {
       $match: {
         user: user._id,
-        'product.productNumber': `#${productNumber}`,
+        'product.productNumber': {
+          $regex: productNumber, // Use regex to match substring
+          $options: 'i', // Optional: Case-insensitive match
+        },
       },
     },
     // Unwind the product array to deconstruct the array
