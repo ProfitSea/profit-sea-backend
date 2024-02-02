@@ -1,13 +1,17 @@
 env: flex
 runtime: nodejs
 
+runtime_config:
+    operating_system: "ubuntu22"
+    runtime_version: "18"
+
 instance_class: F1
 
 env_variables:
   MONGODB_URL: 'mongodb+srv://profitsea:profitsea@cluster0.jay391o.mongodb.net/profitsea?retryWrites=true&w=majority'
   JWT_SECRET: 'thisisasamplesecret'
   JWT_ACCESS_EXPIRATION_MINUTES: '30'
-  JWT_REFRESH_EXPIRATION_DAYS: '30'
+  JWT_REFRESH_EXPIRATION_DAYS: '10'
 
 automatic_scaling:
   min_num_instances: 1

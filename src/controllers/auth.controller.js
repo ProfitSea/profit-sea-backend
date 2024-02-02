@@ -12,9 +12,15 @@ const register = catchAsync(async (req, res) => {
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const user = await authService.loginUserWithEmailAndPassword(email, password);
+  const { apiKey } = await apiKeyService.generateAuthApiKey(user);
+  res.send({ apiKey });
+});
+
+const adminLogin = catchAsync(async (req, res) => {
+  const { email, password } = req.body;
+  const user = await authService.loginUserWithEmailAndPassword(email, password);
   const tokens = await tokenService.generateAuthTokens(user);
-  const apiKey = await apiKeyService.generateAuthApiKey(user);
-  res.send({ user, tokens, apiKey });
+  res.send({ tokens });
 });
 
 const logout = catchAsync(async (req, res) => {
@@ -50,8 +56,14 @@ const verifyEmail = catchAsync(async (req, res) => {
 });
 
 const verifyApiKey = catchAsync(async (req, res) => {
-  await authService.verifyApiKey(req.query.apiKey, req.query.email);
-  res.status(httpStatus.NO_CONTENT).send();
+  const user = await authService.verifyApiKey(req.query.apiKey, req.query.email);
+
+  const [tokens] = await Promise.all([
+    tokenService.generateAuthTokens(user),
+    apiKeyService.deleteApiKey(user, req.query.apiKey),
+  ]);
+
+  res.status(httpStatus.OK).send({ tokens });
 });
 
 module.exports = {
@@ -64,4 +76,5 @@ module.exports = {
   sendVerificationEmail,
   verifyEmail,
   verifyApiKey,
+  adminLogin,
 };

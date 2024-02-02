@@ -108,6 +108,7 @@ const verifyApiKey = async (apiKey, email) => {
     if (!apiKeyDoc) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'ApiKey Verification failed');
     }
+    return user;
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'ApiKey Verification failed');
   }

@@ -2,52 +2,43 @@ const mongoose = require('mongoose');
 const { toJSON, paginate } = require('./plugins');
 const { vendorNameEnums } = require('../utils/enums');
 
-const priceSchema = new mongoose.Schema({
-  price: {
-    type: Number,
-    required: true,
+const productSchema = new mongoose.Schema(
+  {
+    vendor: {
+      type: String,
+      enum: vendorNameEnums,
+      required: true,
+    },
+    imgSrc: {
+      type: String,
+    },
+    brand: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    productNumber: {
+      type: String,
+      required: true,
+    },
+    packSize: {
+      type: String,
+      required: true,
+    },
+    saleUnits: [
+      {
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: 'ProductSaleUnit',
+      },
+    ],
   },
-  unit: {
-    type: String,
-    required: true,
-  },
-});
-
-const productSchema = new mongoose.Schema({
-  vendor: {
-    type: String,
-    enum: vendorNameEnums,
-    required: true,
-  },
-  imgSrc: {
-    type: String,
-  },
-  brand: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  productNumber: {
-    type: String,
-    required: true,
-  },
-  packSize: {
-    type: String,
-    required: true,
-  },
-  prices: {
-    type: [priceSchema],
-    required: true,
-    _id: false,
-  },
-  quantity: {
-    type: Number,
-    default: 0,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 // add plugin that converts mongoose to json
 productSchema.plugin(toJSON);

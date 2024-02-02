@@ -2,6 +2,8 @@ const express = require('express');
 const authRoute = require('./auth.route');
 const userRoute = require('./user.route');
 const productRoute = require('./product.route');
+const listRoute = require('./list.route');
+const listItemRoute = require('./listItem.route');
 const docsRoute = require('./docs.route');
 const config = require('../../config/config');
 
@@ -19,6 +21,14 @@ const defaultRoutes = [
   {
     path: '/products',
     route: productRoute,
+  },
+  {
+    path: '/lists',
+    route: listRoute,
+  },
+  {
+    path: '/list-items',
+    route: listItemRoute,
   },
 ];
 

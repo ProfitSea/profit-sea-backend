@@ -86,6 +86,23 @@ const generateAuthTokens = async (user) => {
 };
 
 /**
+ * Generate Access token
+ * @param {User} user
+ * @returns {Promise<Object>}
+ */
+const generateAccessToken = async (user) => {
+  const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
+  const accessToken = generateToken(user.id, accessTokenExpires, tokenTypes.ACCESS);
+
+  return {
+    access: {
+      token: accessToken,
+      expires: accessTokenExpires.toDate(),
+    },
+  };
+};
+
+/**
  * Generate reset password token
  * @param {string} email
  * @returns {Promise<string>}
@@ -120,4 +137,5 @@ module.exports = {
   generateAuthTokens,
   generateResetPasswordToken,
   generateVerifyEmailToken,
+  generateAccessToken,
 };

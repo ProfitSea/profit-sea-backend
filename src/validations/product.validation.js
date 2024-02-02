@@ -7,6 +7,18 @@ const priceValidation = Joi.object().keys({
   unit: Joi.string().required(),
 });
 
+const productSchema = Joi.object().keys({
+  vendor: Joi.string()
+    .required()
+    .valid(...vendorNameEnums),
+  imgSrc: Joi.string().allow('').allow(null),
+  brand: Joi.string().required(),
+  description: Joi.string().required(),
+  productNumber: Joi.string().required(),
+  packSize: Joi.string().required(),
+  prices: Joi.array().items(priceValidation).required(),
+});
+
 const createProduct = {
   body: Joi.object().keys({
     vendor: Joi.string()
@@ -18,7 +30,6 @@ const createProduct = {
     productNumber: Joi.string().required(),
     packSize: Joi.string().required(),
     prices: Joi.array().items(priceValidation).required(),
-    quantity: Joi.number().integer().default(0),
   }),
 };
 
@@ -52,7 +63,6 @@ const updateProduct = {
       productNumber: Joi.string(),
       packSize: Joi.string(),
       prices: Joi.array().items(priceValidation),
-      quantity: Joi.number().integer(),
     })
     .min(1),
 };
@@ -69,4 +79,6 @@ module.exports = {
   getProduct,
   updateProduct,
   deleteProduct,
+  productSchema,
+  priceValidation,
 };
