@@ -26,10 +26,16 @@ const getListItemById = catchAsync(async (req, res) => {
   res.send({ listItem });
 });
 
+const toggleListItemAnchor = catchAsync(async (req, res) => {
+  const listItem = await listItemService.toggleListItemAnchor(req.user, req.params.id);
+  res.send({ listItem, message: 'List item anchored' });
+});
+
 module.exports = {
   updateListItemQuantity,
   updateListItemPrice,
   getListItem,
   updateListItemPricesByProductNumber,
   getListItemById,
+  toggleListItemAnchor,
 };

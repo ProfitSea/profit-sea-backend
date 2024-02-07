@@ -8,6 +8,18 @@ const getListItem = {
   },
 };
 
+const getListItemById = {
+  params: Joi.object().keys({
+    id: Joi.string().custom(objectId).required(),
+  }),
+};
+
+const toggleListItemAnchor = {
+  params: Joi.object().keys({
+    id: Joi.string().custom(objectId).required(),
+  }),
+};
+
 const updateListItemPricesByProductNumber = {
   query: {
     productNumber: Joi.string().required(),
@@ -37,4 +49,6 @@ module.exports = {
   updateListItemPrice,
   getListItem,
   updateListItemPricesByProductNumber,
+  getListItemById,
+  toggleListItemAnchor,
 };
