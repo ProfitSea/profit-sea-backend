@@ -31,7 +31,6 @@ const createProduct = async (productBody) => {
 
   if (existingProduct) {
     existingProduct.category = productBody.category; // Replace 'updatedCategory' with the new category value
-    existingProduct.normalizedDescription = productBody.normalizedDescription; // Replace 'updatedNormalizedCategory' with the new normalized category value
     // Save the changes
     await existingProduct.save();
     return existingProduct;
@@ -46,17 +45,7 @@ const createProduct = async (productBody) => {
   let product;
   try {
     await session.withTransaction(async () => {
-      const {
-        prices: saleUnits,
-        vendor,
-        imgSrc,
-        brand,
-        description,
-        productNumber,
-        packSize,
-        category,
-        normalizedDescription,
-      } = productBody;
+      const { prices: saleUnits, vendor, imgSrc, brand, description, productNumber, packSize, category } = productBody;
 
       const productId = mongoose.Types.ObjectId();
 
@@ -88,7 +77,7 @@ const createProduct = async (productBody) => {
         productNumber,
         packSize,
         category,
-        normalizedDescription,
+        // normalizedDescription,
         _id: productId,
       });
       await product.save({ session });

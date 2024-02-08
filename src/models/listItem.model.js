@@ -8,6 +8,17 @@ const listItemSchema = mongoose.Schema(
       ref: 'Products',
       required: true,
     },
+    isBaseProduct: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    comparisionProducts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product', // Reference to the Product model
+      },
+    ],
     vendor: {
       type: String,
       required: true,
