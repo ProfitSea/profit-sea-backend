@@ -34,9 +34,8 @@ const addListItem = async (user, listId, product) => {
 
   const openAiService = new OpenAiService();
   const category = await openAiService.getProductCategory(product?.brand, product?.description);
-  const normalizedDescription = await openAiService.getNormalizedDescription(product?.brand, product?.description);
 
-  const productItem = { ...product, category, normalizedDescription };
+  const productItem = { ...product, category };
   console.log('product item to add->>');
   console.log(productItem);
   const listItem = await listItemService.createListItem(user, listId, productItem);

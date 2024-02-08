@@ -37,22 +37,6 @@ class OpenAiService {
     return response?.choices[0].text.trim();
   }
 
-  async getNormalizedDescription(brand, description) {
-    const prompt = `
-      Summarize the following product description:
-      ${description}
-      Provide a concise summary that captures the main features of the product only if the description has more than 5 words. No more than 5 words.
-      `;
-    const normalizedDescription = await this.openai.completions.create({
-      model: 'gpt-3.5-turbo-instruct',
-      prompt,
-      temperature: 0.2,
-      max_tokens: 150,
-      n: 1,
-    });
-    return normalizedDescription?.choices[0].text.trim();
-  }
-
   async getSubCategories(products) {
     const subcategories = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
