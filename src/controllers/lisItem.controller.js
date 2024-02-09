@@ -2,22 +2,22 @@ const catchAsync = require('../utils/catchAsync');
 const { listItemService } = require('../services');
 
 const addComparisonProduct = catchAsync(async (req, res) => {
-  const productAddedToComparison = await listItemService.addComparisonProduct(
+  const [productAddedToComparison, message] = await listItemService.addComparisonProduct(
     req.user,
     req.params.baseProductListItemId,
     req.params.comparisonProductListItemId,
     req.query.action
   );
-  res.send({ message: 'List item added to comparison group', productAddedToComparison });
+  res.send({ message, productAddedToComparison });
 });
 
 const removeComparisonProduct = catchAsync(async (req, res) => {
-  const productRemovedFromComparison = await listItemService.removeComparisonProduct(
+  const [productRemovedFromComparison, message] = await listItemService.removeComparisonProduct(
     req.user,
     req.params.baseProductListItemId,
     req.params.comparisonProductListItemId
   );
-  res.send({ message: 'List item removed from comparison group', productRemovedFromComparison });
+  res.send({ message, productRemovedFromComparison });
 });
 
 const updateListItemQuantity = catchAsync(async (req, res) => {
