@@ -3,8 +3,15 @@ const { objectId } = require('./custom.validation');
 
 const addComparisonProduct = {
   params: Joi.object().keys({
-    baseProductListItemId: Joi.string().custom(objectId), // You might also want to validate this using a custom objectId validation similar to the user.
-    comparisonProductListItemId: Joi.string().custom(objectId).optional(), // You might also want to validate this using a custom objectId validation similar to the user.
+    baseProductListItemId: Joi.string().custom(objectId),
+    comparisonProductListItemId: Joi.string().custom(objectId).optional(),
+  }),
+};
+
+const removeComparisonProduct = {
+  params: Joi.object().keys({
+    baseProductListItemId: Joi.string().custom(objectId),
+    comparisonProductListItemId: Joi.string().custom(objectId).optional(),
   }),
 };
 
@@ -30,6 +37,7 @@ const updateListItemPrice = {
 
 module.exports = {
   addComparisonProduct,
+  removeComparisonProduct,
   updateListItemQuantity,
   updateListItemPrice,
 };

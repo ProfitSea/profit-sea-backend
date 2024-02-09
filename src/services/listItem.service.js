@@ -226,30 +226,65 @@ const updateListItemPrice = async (user, listItemId, prices) => {
  * @returns {Promise<Product>}
  */
 const addComparisonProduct = async (user, baseProductListItemId, comparisonProductListItemId) => {
-  let updatedResult = null;
-  const baseProductExistsPromise = ListItem.exists({ _id: baseProductListItemId });
-  const comparisonItemExistsPromise = ListItem.exists({ _id: comparisonProductListItemId });
+  // Check if baseProductListItemId exists
+  const baseProductExists = baseProductListItemId ? await ListItem.exists({ _id: baseProductListItemId }) : false;
 
-  const [baseProductExists, comparisonItemExists] = await Promise.all([
-    baseProductExistsPromise,
-    comparisonItemExistsPromise,
-  ]);
+  // Check if comparisonProductListItemId exists
+  const comparisonItemExists = comparisonProductListItemId
+    ? await ListItem.exists({ _id: comparisonProductListItemId })
+    : true;
 
-  if (!baseProductExists || !comparisonItemExists) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'List item not found to compare');
+  // Perform checks based on the specified conditions
+  if (
+    (baseProductListItemId && baseProductExists && !comparisonProductListItemId) ||
+    (baseProductListItemId && baseProductExists && comparisonProductListItemId && comparisonItemExists)
+  ) {
+    // Continue performing the operations
+    const updateQuery = comparisonProductListItemId
+      ? { $addToSet: { comparisonProducts: comparisonProductListItemId } }
+      : { $set: { isBaseProduct: true } };
+
+    let updatedResult = await ListItem.findOneAndUpdate({ _id: baseProductListItemId }, updateQuery, { new: true });
+
+    if (!updatedResult) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+    }
+
+    return updatedResult;
   }
+  // Throw error if conditions are not met
+  throw new ApiError(httpStatus.NOT_FOUND, 'List item not found to compare');
+};
 
-  const updateQuery = comparisonProductListItemId
-    ? { $addToSet: { comparisonProducts: comparisonProductListItemId } }
-    : { $set: { isBaseProduct: true } };
+const removeComparisonProduct = async (user, baseProductListItemId, comparisonProductListItemId) => {
+  // Check if baseProductListItemId exists
+  const baseProductExists = baseProductListItemId ? await ListItem.exists({ _id: baseProductListItemId }) : false;
 
-  updatedResult = await ListItem.findOneAndUpdate({ _id: baseProductListItemId }, updateQuery, { new: true });
+  // Check if comparisonProductListItemId exists
+  const comparisonItemExists = comparisonProductListItemId
+    ? await ListItem.exists({ _id: comparisonProductListItemId })
+    : true;
 
-  if (updatedResult === null) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  // Perform checks based on the specified conditions
+  if (
+    (baseProductListItemId && baseProductExists && !comparisonProductListItemId) ||
+    (baseProductListItemId && baseProductExists && comparisonProductListItemId && comparisonItemExists)
+  ) {
+    // Continue performing the operations
+    const updateQuery = comparisonProductListItemId
+      ? { $pull: { comparisonProducts: comparisonProductListItemId } }
+      : { $set: { isBaseProduct: false } };
+
+    let updatedResult = await ListItem.findOneAndUpdate({ _id: baseProductListItemId }, updateQuery, { new: true });
+
+    if (!updatedResult) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+    }
+
+    return updatedResult;
   }
-
-  return updatedResult;
+  // Throw error if conditions are not met
+  throw new ApiError(httpStatus.NOT_FOUND, 'List item not found to compare');
 };
 
 module.exports = {
@@ -261,4 +296,5 @@ module.exports = {
   updateListItemQuantity,
   updateListItemPrice,
   addComparisonProduct,
+  removeComparisonProduct,
 };

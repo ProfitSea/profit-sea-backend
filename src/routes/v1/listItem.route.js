@@ -11,6 +11,10 @@ router
   .post(auth(), validate(listItemValidation.addComparisonProduct), listItemController.addComparisonProduct);
 
 router
+  .route('/:baseProductListItemId/remove-comparison-product/:comparisonProductListItemId?')
+  .post(auth(), validate(listItemValidation.removeComparisonProduct), listItemController.removeComparisonProduct);
+
+router
   .route('/quantity')
   .patch(auth(), validate(listItemValidation.updateListItemQuantity), listItemController.updateListItemQuantity);
 
