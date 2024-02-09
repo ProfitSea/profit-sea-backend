@@ -7,6 +7,10 @@ const listItemController = require('../../controllers/lisItem.controller');
 const router = express.Router();
 
 router
+  .route('/:baseProductListItemId/add-comparison-product/:comparisonProductListItemId?')
+  .post(auth(), validate(listItemValidation.addComparisonProduct), listItemController.addComparisonProduct);
+
+router
   .route('/quantity')
   .patch(auth(), validate(listItemValidation.updateListItemQuantity), listItemController.updateListItemQuantity);
 

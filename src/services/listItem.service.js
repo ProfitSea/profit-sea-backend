@@ -218,6 +218,37 @@ const updateListItemPrice = async (user, listItemId, prices) => {
   }
 };
 
+/**
+ * TODO: UPDATE COMMENTS
+ * Add comparison product
+ * @param {ObjectId} listItemId
+ * @param {Array} prices
+ * @returns {Promise<Product>}
+ */
+const addComparisonProduct = async (user, baseProductListItemId, comparisonProductListItemId) => {
+  let updatedResult = null;
+  if (!comparisonProductListItemId) {
+    updatedResult = await ListItem.findOneAndUpdate(
+      { _id: baseProductListItemId },
+      { $set: { isBaseProduct: true } },
+      { new: true }
+    );
+    if (updatedResult.nModified === 0) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found to create group of product');
+    }
+  } else {
+    updatedResult = await ListItem.findOneAndUpdate(
+      { _id: baseProductListItemId },
+      { $set: { comparisonProducts: comparisonProductListItemId } },
+      { new: true }
+    );
+    if (updatedResult.nModified === 0) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'ListItem added to comparison group of base product');
+    }
+  }
+  return updatedResult;
+};
+
 module.exports = {
   createListItem,
   queryListItems,
@@ -226,4 +257,5 @@ module.exports = {
   deleteListItemById,
   updateListItemQuantity,
   updateListItemPrice,
+  addComparisonProduct,
 };

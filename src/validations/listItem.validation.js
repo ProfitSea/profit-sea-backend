@@ -1,6 +1,13 @@
 const Joi = require('joi');
 const { objectId } = require('./custom.validation');
 
+const addComparisonProduct = {
+  params: Joi.object().keys({
+    baseProductListItemId: Joi.string().custom(objectId), // You might also want to validate this using a custom objectId validation similar to the user.
+    comparisonProductListItemId: Joi.string().custom(objectId).optional(), // You might also want to validate this using a custom objectId validation similar to the user.
+  }),
+};
+
 const updateListItemQuantity = {
   body: Joi.object().keys({
     listItemId: Joi.string().custom(objectId).required(),
@@ -22,6 +29,7 @@ const updateListItemPrice = {
 };
 
 module.exports = {
+  addComparisonProduct,
   updateListItemQuantity,
   updateListItemPrice,
 };
