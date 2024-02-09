@@ -227,25 +227,28 @@ const updateListItemPrice = async (user, listItemId, prices) => {
  */
 const addComparisonProduct = async (user, baseProductListItemId, comparisonProductListItemId) => {
   let updatedResult = null;
-  if (!comparisonProductListItemId) {
-    updatedResult = await ListItem.findOneAndUpdate(
-      { _id: baseProductListItemId },
-      { $set: { isBaseProduct: true } },
-      { new: true }
-    );
-    if (updatedResult.nModified === 0) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found to create group of product');
-    }
-  } else {
-    updatedResult = await ListItem.findOneAndUpdate(
-      { _id: baseProductListItemId },
-      { $set: { comparisonProducts: comparisonProductListItemId } },
-      { new: true }
-    );
-    if (updatedResult.nModified === 0) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'ListItem added to comparison group of base product');
-    }
+  const baseProductExistsPromise = ListItem.exists({ _id: baseProductListItemId });
+  const comparisonItemExistsPromise = ListItem.exists({ _id: comparisonProductListItemId });
+
+  const [baseProductExists, comparisonItemExists] = await Promise.all([
+    baseProductExistsPromise,
+    comparisonItemExistsPromise,
+  ]);
+
+  if (!baseProductExists || !comparisonItemExists) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'List item not found to compare');
   }
+
+  const updateQuery = comparisonProductListItemId
+    ? { $addToSet: { comparisonProducts: comparisonProductListItemId } }
+    : { $set: { isBaseProduct: true } };
+
+  updatedResult = await ListItem.findOneAndUpdate({ _id: baseProductListItemId }, updateQuery, { new: true });
+
+  if (updatedResult === null) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+
   return updatedResult;
 };
 
