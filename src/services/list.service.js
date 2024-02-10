@@ -92,7 +92,7 @@ const queryLists = async (filter, options) => {
  * @returns {Promise<List>}
  */
 const getListById = async (listId) => {
-  return List.findById(listId).populate({
+  const list = await List.findById(listId).populate({
     path: 'listItems',
     populate: [
       {
@@ -106,90 +106,30 @@ const getListById = async (listId) => {
         path: 'saleUnitQuantities.price',
         model: 'Price', // Replace with the correct model name for price
       },
+      {
+        path: 'comparisonProducts',
+        model: 'ListItem',
+      },
     ],
   });
-  // for (let index = 0; index < list.listItems.length; index++) {
-  //   const element = list.listItems[index];
-  //   if(!element?.product?.category){
-  //       const prompt = `Tell me under which category does this product ${element?.product?.brand} ${element?.product?.description} fall under
-  //     Categories:
-  //   Beef
-  //   Pork
-  //   Poultry
-  //   Lamb
-  //   Exotic meats
-  //   Fish
-  //   Shellfish
-  //   Other seafood items
-  //   Fresh fruits
-  //   Fresh vegetables
-  //   Herbs
-  //   Milk
-  //   Cheese
-  //   Butter
-  //   Cream
-  //   Bread
-  //   Rolls
-  //   Pastries
-  //   Baked goods
-  //   Rice
-  //   Pasta
-  //   Flour
-  //   Sugar
-  //   Vegetables
-  //   Fruits
-  //   Sauces
-  //   Preserves
-  //   Ketchup
-  //   Mustard
-  //   Mayonnaise
-  //   Salad dressings
-  //   Cooking sauces
-  //   Spices
-  //   Soft drinks
-  //   Juices
-  //   Bottled water
-  //   Alcoholic beverages (Wine, Beer)
-  //   Ice cream
-  //   Frozen vegetables
-  //   Other frozen products
-  //   Cooking oils
-  //   Lard
-  //   Other fats
-  //   Tofu
-  //   Ethnic spices
-  //   Regional ingredients
-  //   Detergents
-  //   Sanitizers
-  //   Cleaning tools
-  //   Napkins
-  //   Paper towels
-  //   Toilet paper
-  //   Disposable items
-  //   To-go Containers
-  //   Cooking utensils
-  //   Pots
-  //   Pans
-  //   Mixers
-  //   Spirits
-  //   Bar tools
-  //   Coffee varieties
-  //   Tea varieties
 
-  //     Structure the response as the following: "Category"
-  //     `
-  //     //get product's category
-  //     const response = await openai.completions.create({
-  //       model: "gpt-3.5-turbo-instruct",
-  //       prompt,
-  //       temperature: 0.2,
-  //       max_tokens: 500
-  //     });
-  //     console.log({productId: element?.product?.id, category: response?.choices[0].text.trim()})
-  //       updateProductById(element?.product?.id, {category: response?.choices[0].text.trim()})
-  //   }
-  // }
+  // Group products based on isBaseProduct flag
+  const groupedProducts = {};
+  // console.log({ list });
+
+  list.listItems.forEach((listItem) => {
+    console.log({ listItem });
+    if (listItem.isBaseProduct) {
+      groupedProducts[listItem._id] = {
+        baseProduct: listItem,
+        comparisonProducts: listItem.comparisonProducts.map((cp) => cp.product),
+      };
+    }
+  });
+
+  return { list, groupedProducts };
 };
+
 /**
  * Get list by id
  * @param {ObjectId} listId
@@ -197,50 +137,13 @@ const getListById = async (listId) => {
  */
 const getListAnalysis = async (listId) => {
   const openAiService = new OpenAiService();
-  const list = await getListById(listId);
-  // console.log({ list });
-  //group products into categories
-  const categories = list?.listItems?.reduce((acc, element) => {
-    const category = element?.product?.category;
-    if (!category) return acc;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-
-    // console.log({ category });
-    // console.log({ acc });
-    // console.log({ element });
-    const item = Object.assign(
-      {
-        totalPrice: element?.totalPrice,
-        price: element?.saleUnitQuantities[0].price?.price,
-        quantity: element?.saleUnitQuantities[0].quantity,
-        unit: element?.saleUnitQuantities[0]?.saleUnit?.unit,
-      },
-      { product: element?.product }
-    );
-    // console.log({ item });
-
-    acc[category].push(item);
-    return acc;
-  }, {});
-
-  // console.log('typeof categories');
-  // console.log(typeof categories);
-  // console.log({ categoriesLenght: categories.length });
-  console.log('1. group products into categories ');
-  console.log({ categories });
-  console.log('');
-  const categorizedList = Object.values(categories);
-
-  // console.log('categorizedList.length)');
-  // console.log({ categorizedList });
-  // console.log('categorizedList[0]');
-  // console.log(categorizedList[0]);
-  // console.warn('categorizedList.length: ', categorizedList.length);
-  // console.log(typeof categorizedList);
-  // console.log(categorizedList[0][0]);
-
+  const { list, groupedProducts } = await getListById(listId);
+  console.log('1. User-defined product groups ');
+  console.log({ groupedProducts });
+  return groupedProducts;
+  // const openAiService = new OpenAiService();
+  // console.log('2. ask ai to group products into subcategories');
+  // const productGroups = await openAiService.getSubCategories(products);
   const result = [];
   for (let index = 0; index < categorizedList.length; index++) {
     const productsByCategory = categorizedList[index];
