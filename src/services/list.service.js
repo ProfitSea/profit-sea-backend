@@ -127,6 +127,18 @@ const getListById = async (listId) => {
   });
 };
 
+const formatProduct = (product) => {
+  return `productNumber: ${product.productNumber} $${product.price}/${product.unit}, ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice}`;
+};
+
+const formatProductGroup = (productGroup) => {
+  return productGroup.map(formatProduct);
+};
+
+const formatList = (list) => {
+  return list.map(formatProductGroup);
+};
+
 /**
  * Get list by id
  * @param {ObjectId} listId
@@ -147,6 +159,7 @@ const getListAnalysis = async (listId) => {
         description: listItem.product.description,
         productNumber: listItem.product.productNumber,
         productNumber: listItem.product.productNumber,
+        packSize: listItem.product.packSize,
         totalPrice: listItem?.totalPrice,
         price: listItem?.saleUnitQuantities[0].price?.price,
         quantity: listItem?.saleUnitQuantities[0].quantity,
@@ -164,6 +177,7 @@ const getListAnalysis = async (listId) => {
           brand: comparisonProduct.product.brand,
           description: comparisonProduct.product.description,
           productNumber: comparisonProduct.product.productNumber,
+          packSize: comparisonProduct.product.packSize,
           totalPrice: comparisonProduct?.totalPrice,
           price: comparisonProduct?.saleUnitQuantities[0].price?.price,
           quantity: comparisonProduct?.saleUnitQuantities[0].quantity,
@@ -176,104 +190,30 @@ const getListAnalysis = async (listId) => {
   const groupedProductsArray = Object.values(groupedProducts);
   console.log('1. User-defined product groups ');
   console.log({ groupedProductsArray });
-  return groupedProductsArray;
 
-  const categories = list?.listItems?.reduce((acc, element) => {
-    const category = element?.product?.category;
-    if (!category) return acc;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-
-    // console.log({ category });
-    // console.log({ acc });
-    // console.log({ element });
-    const item = Object.assign(
-      {
-        totalPrice: element?.totalPrice,
-        price: element?.saleUnitQuantities[0].price?.price,
-        quantity: element?.saleUnitQuantities[0].quantity,
-        unit: element?.saleUnitQuantities[0]?.saleUnit?.unit,
-      },
-      { product: element?.product }
-    );
-    // console.log({ item });
-
-    acc[category].push(item);
-    return acc;
-  }, {});
-
-  // console.log('typeof categories');
-  // console.log(typeof categories);
-  // console.log({ categoriesLenght: categories.length });
-  console.log('1. group products into categories ');
-  console.log({ categories });
+  const productInfoForRecommendation = formatList(groupedProductsArray);
+  console.log('productInfoForRecommendation');
+  console.log('============================');
+  console.log(productInfoForRecommendation);
+  console.log('<.>');
   console.log('');
-  const categorizedList = Object.values(categories);
-
-  // const openAiService = new OpenAiService();
-  // console.log('2. ask ai to group products into subcategories');
-  // const productGroups = await openAiService.getSubCategories(products);
-  const result = [];
-  for (let index = 0; index < categorizedList.length; index++) {
-    const productsByCategory = categorizedList[index];
-    const products = productsByCategory.map(({ product }) => {
-      // console.log('vendor: ', product?.vendor);
-      // console.log('brand: ', product?.brand);
-      // console.log('description: ', product?.description);
-      // console.log('productNumber: ', product?.productNumber);
-      return `${product?.vendor} <> ${product?.brand} <> ${product?.description} <> productNumber: ${product?.productNumber}`;
-    });
-
-    // console.log({ products });
-    // console.log({ products: products.join('|') });
-    console.log({ products });
-    if (products.length > 1) {
-      // ask ai to group products into subcategories
+  // Iterate through each group array and send recommendation requests in parallel
+  const recommendations = await Promise.all(
+    productInfoForRecommendation.map(async (group) => {
+      // Join the current group array to create a single string
+      const groupString = group.join();
+      // console.log({ groupString });
       const openAiService = new OpenAiService();
-      console.log('2. ask ai to group products into subcategories');
-      const productGroups = await openAiService.getSubCategories(products);
-      console.log({ subCategories: productGroups });
-      console.log('');
+      // Send the current group string to get a recommendation
+      return await openAiService.getRecomendation(groupString);
+    })
+  );
 
-      const productsInfo = productsByCategory.map(
-        ({ product, totalPrice, price, unit, quantity }) =>
-          `productNumber: ${product?.productNumber} $${price}/${unit}, ${product?.packSize}/${unit}, Qty: ${quantity}, Total $${totalPrice}`
-      );
-      // ask ai to recommend one out of the subcategory
-      console.log({ productsInfo });
-      console.log(productsInfo.join());
-      console.log('');
+  console.log('recommendations');
+  console.log('===============');
+  console.log(recommendations);
 
-      console.log('3. ask ai to recommend one out of the subcategory');
-      const recommendedProduct = await openAiService.getRecomendation(productsInfo.join());
-      console.log({ recommendedProduct });
-      console.log('');
-
-      // group items per subcategory and flag recommended one.
-      console.log('4. group items per subcategory and flag recommended one.');
-
-      const items = productsByCategory
-        .filter((item) =>
-          productGroups.find((text) => {
-            console.log({ text });
-            return item.product.productNumber.includes(text);
-          })
-        )
-        .map((item) => ({
-          ...item,
-          recommended: recommendedProduct[0] === item.product.productNumber,
-          recommendedReason: recommendedProduct[0] === item.product.productNumber ? recommendedProduct[1] : '',
-        }));
-      result.push(items);
-
-      console.log({ result });
-      console.log('');
-    } else {
-      result.push(productsByCategory);
-    }
-  }
-  return result;
+  return [groupedProductsArray, productInfoForRecommendation];
 };
 
 /**
