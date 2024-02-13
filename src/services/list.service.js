@@ -109,9 +109,19 @@ const getListById = async (listId) => {
       {
         path: 'comparisonProducts',
         model: 'ListItem',
-        populate: {
-          path: 'product',
-        },
+        populate: [
+          {
+            path: 'product',
+          },
+          {
+            path: 'saleUnitQuantities.saleUnit',
+            model: 'ProductSaleUnit',
+          },
+          {
+            path: 'saleUnitQuantities.price',
+            model: 'Price',
+          },
+        ],
       },
     ],
   });
@@ -136,6 +146,11 @@ const getListAnalysis = async (listId) => {
         brand: listItem.product.brand,
         description: listItem.product.description,
         productNumber: listItem.product.productNumber,
+        productNumber: listItem.product.productNumber,
+        totalPrice: listItem?.totalPrice,
+        price: listItem?.saleUnitQuantities[0].price?.price,
+        quantity: listItem?.saleUnitQuantities[0].quantity,
+        unit: listItem?.saleUnitQuantities[0]?.saleUnit?.unit,
       };
       // Add product information to groupedProducts
       groupedProducts[listItem.product._id.toString()] = [];
@@ -149,18 +164,19 @@ const getListAnalysis = async (listId) => {
           brand: comparisonProduct.product.brand,
           description: comparisonProduct.product.description,
           productNumber: comparisonProduct.product.productNumber,
+          totalPrice: comparisonProduct?.totalPrice,
+          price: comparisonProduct?.saleUnitQuantities[0].price?.price,
+          quantity: comparisonProduct?.saleUnitQuantities[0].quantity,
+          unit: comparisonProduct?.saleUnitQuantities[0]?.saleUnit?.unit,
         });
       });
     }
   });
   // Convert groupedProducts object to array
   const groupedProductsArray = Object.values(groupedProducts);
-
-  return groupedProductsArray;
   console.log('1. User-defined product groups ');
-  console.log({ groupedProducts });
-
-  return groupedProducts;
+  console.log({ groupedProductsArray });
+  return groupedProductsArray;
 
   const categories = list?.listItems?.reduce((acc, element) => {
     const category = element?.product?.category;
