@@ -91,7 +91,6 @@ const queryLists = async (filter, options) => {
  * @param {ObjectId} listId
  * @returns {Promise<List>}
  */
-
 const getListById = async (listId) => {
   return await List.findById(listId).populate({
     path: 'listItems',
@@ -118,9 +117,15 @@ const getListById = async (listId) => {
   });
 };
 
-async function groupProducts(list) {
+/**
+ * Get list by id
+ * @param {ObjectId} listId
+ * @returns {Promise<List>}
+ */
+const getListAnalysis = async (listId) => {
+  const list = await getListById(listId);
+  // Initialize an object to store grouped products
   const groupedProducts = {};
-  console.log({ list });
   // Iterate through each list item
   list.listItems.forEach((listItem) => {
     // If it's a base product, add it to groupedProducts
@@ -147,22 +152,9 @@ async function groupProducts(list) {
         });
       });
     }
-    // Convert groupedProducts object to array
-    const groupedProductsArray = Object.values(groupedProducts);
-    return groupedProductsArray;
   });
-}
-
-/**
- * Get list by id
- * @param {ObjectId} listId
- * @returns {Promise<List>}
- */
-const getListAnalysis = async (listId) => {
-  const list = await getListById(listId);
-  // Initialize an object to store grouped products
-
-  const groupedProductsArray = groupProducts(list);
+  // Convert groupedProducts object to array
+  const groupedProductsArray = Object.values(groupedProducts);
 
   return groupedProductsArray;
   console.log('1. User-defined product groups ');
