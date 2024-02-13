@@ -243,7 +243,7 @@ const updateComparisonProduct = async (user, baseProductListItemId, comparisonPr
     let updateQuery;
     if (isAddOperation) {
       updateQuery = comparisonProductListItemId
-        ? { $set: { comparisonProducts: comparisonProductListItemId } }
+        ? { $addToSet: { comparisonProducts: comparisonProductListItemId } }
         : { $set: { isBaseProduct: true } };
       message = comparisonProductListItemId
         ? 'List item added to comparison group succesfully'

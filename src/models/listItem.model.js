@@ -16,7 +16,7 @@ const listItemSchema = mongoose.Schema(
     comparisonProducts: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product', // Reference to the Product model
+        ref: 'ListItem',
       },
     ],
     vendor: {

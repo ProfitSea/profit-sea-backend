@@ -91,8 +91,9 @@ const queryLists = async (filter, options) => {
  * @param {ObjectId} listId
  * @returns {Promise<List>}
  */
+
 const getListById = async (listId) => {
-  const list = await List.findById(listId).populate({
+  return await List.findById(listId).populate({
     path: 'listItems',
     populate: [
       {
@@ -100,35 +101,57 @@ const getListById = async (listId) => {
       },
       {
         path: 'saleUnitQuantities.saleUnit',
-        model: 'ProductSaleUnit', // Replace with the correct model name for sale units
+        model: 'ProductSaleUnit',
       },
       {
         path: 'saleUnitQuantities.price',
-        model: 'Price', // Replace with the correct model name for price
+        model: 'Price',
       },
       {
         path: 'comparisonProducts',
         model: 'ListItem',
+        populate: {
+          path: 'product',
+        },
       },
     ],
   });
-
-  // Group products based on isBaseProduct flag
-  const groupedProducts = {};
-  // console.log({ list });
-
-  list.listItems.forEach((listItem) => {
-    console.log({ listItem });
-    if (listItem.isBaseProduct) {
-      groupedProducts[listItem._id] = {
-        baseProduct: listItem,
-        comparisonProducts: listItem.comparisonProducts.map((cp) => cp.product),
-      };
-    }
-  });
-
-  return { list, groupedProducts };
 };
+
+async function groupProducts(list) {
+  const groupedProducts = {};
+  console.log({ list });
+  // Iterate through each list item
+  list.listItems.forEach((listItem) => {
+    // If it's a base product, add it to groupedProducts
+    if (listItem.isBaseProduct) {
+      // Extract product information
+      const productInfo = {
+        vendor: listItem.vendor,
+        brand: listItem.product.brand,
+        description: listItem.product.description,
+        productNumber: listItem.product.productNumber,
+      };
+      // Add product information to groupedProducts
+      groupedProducts[listItem.product._id.toString()] = [];
+      groupedProducts[listItem.product._id.toString()].push(productInfo);
+
+      // Iterate through comparison products
+      listItem.comparisonProducts.forEach((comparisonProduct) => {
+        // Add comparison product information to groupedProducts
+        groupedProducts[listItem.product._id.toString()].push({
+          vendor: comparisonProduct.vendor,
+          brand: comparisonProduct.product.brand,
+          description: comparisonProduct.product.description,
+          productNumber: comparisonProduct.product.productNumber,
+        });
+      });
+    }
+    // Convert groupedProducts object to array
+    const groupedProductsArray = Object.values(groupedProducts);
+    return groupedProductsArray;
+  });
+}
 
 /**
  * Get list by id
@@ -136,11 +159,50 @@ const getListById = async (listId) => {
  * @returns {Promise<List>}
  */
 const getListAnalysis = async (listId) => {
-  const openAiService = new OpenAiService();
-  const { list, groupedProducts } = await getListById(listId);
+  const list = await getListById(listId);
+  // Initialize an object to store grouped products
+
+  const groupedProductsArray = groupProducts(list);
+
+  return groupedProductsArray;
   console.log('1. User-defined product groups ');
   console.log({ groupedProducts });
+
   return groupedProducts;
+
+  const categories = list?.listItems?.reduce((acc, element) => {
+    const category = element?.product?.category;
+    if (!category) return acc;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+
+    // console.log({ category });
+    // console.log({ acc });
+    // console.log({ element });
+    const item = Object.assign(
+      {
+        totalPrice: element?.totalPrice,
+        price: element?.saleUnitQuantities[0].price?.price,
+        quantity: element?.saleUnitQuantities[0].quantity,
+        unit: element?.saleUnitQuantities[0]?.saleUnit?.unit,
+      },
+      { product: element?.product }
+    );
+    // console.log({ item });
+
+    acc[category].push(item);
+    return acc;
+  }, {});
+
+  // console.log('typeof categories');
+  // console.log(typeof categories);
+  // console.log({ categoriesLenght: categories.length });
+  console.log('1. group products into categories ');
+  console.log({ categories });
+  console.log('');
+  const categorizedList = Object.values(categories);
+
   // const openAiService = new OpenAiService();
   // console.log('2. ask ai to group products into subcategories');
   // const productGroups = await openAiService.getSubCategories(products);
