@@ -128,7 +128,7 @@ const getListById = async (listId) => {
 };
 
 const formatProduct = (product) => {
-  return `productNumber: ${product.productNumber} $${product.price}/${product.unit}, ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice}`;
+  return `productNumber: ${product.productNumber},  ${product.brand}, ${product.vendor},  ${product.description}, $${product.price}/${product.unit}, ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice}`;
 };
 
 const formatProductGroup = (productGroup) => {
@@ -154,10 +154,10 @@ const getListAnalysis = async (listId) => {
     if (listItem.isBaseProduct) {
       // Extract product information
       const productInfo = {
+        productId: listItem.product.id,
         vendor: listItem.vendor,
         brand: listItem.product.brand,
         description: listItem.product.description,
-        productNumber: listItem.product.productNumber,
         productNumber: listItem.product.productNumber,
         packSize: listItem.product.packSize,
         totalPrice: listItem?.totalPrice,
@@ -173,6 +173,7 @@ const getListAnalysis = async (listId) => {
       listItem.comparisonProducts.forEach((comparisonProduct) => {
         // Add comparison product information to groupedProducts
         groupedProducts[listItem.product._id.toString()].push({
+          productId: comparisonProduct.product.id,
           vendor: comparisonProduct.vendor,
           brand: comparisonProduct.product.brand,
           description: comparisonProduct.product.description,
@@ -189,14 +190,10 @@ const getListAnalysis = async (listId) => {
   // Convert groupedProducts object to array
   const groupedProductsArray = Object.values(groupedProducts);
   console.log('1. User-defined product groups ');
-  console.log({ groupedProductsArray });
+  // console.log({ groupedProductsArray });
 
   const productInfoForRecommendation = formatList(groupedProductsArray);
-  console.log('productInfoForRecommendation');
-  console.log('============================');
-  console.log(productInfoForRecommendation);
-  console.log('<.>');
-  console.log('');
+  // console.log({productInfoForRecommendation});
   // Iterate through each group array and send recommendation requests in parallel
   const recommendations = await Promise.all(
     productInfoForRecommendation.map(async (group) => {
@@ -208,12 +205,8 @@ const getListAnalysis = async (listId) => {
       return await openAiService.getRecomendation(groupString);
     })
   );
-
-  console.log('recommendations');
-  console.log('===============');
-  console.log(recommendations);
-
-  return [groupedProductsArray, productInfoForRecommendation];
+  // return [groupedProductsArray, recommendations];
+  return [productInfoForRecommendation, recommendations];
 };
 
 /**
