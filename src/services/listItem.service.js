@@ -342,6 +342,23 @@ const createListItem = async (user, listId, product) => {
 
   return getListItemById(listItem.id);
 };
+
+const toggleListItemAnchor = async (user, listItemId) => {
+  const listItem = await ListItem.findOne({
+    user: user.id,
+    _id: listItemId,
+  });
+
+  if(!listItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+
+  listItem.isAnchored = !listItem.isAnchored;
+  await listItem.save();
+  return listItem;
+}
+
+
 module.exports = {
   createListItem,
   queryListItems,
@@ -352,4 +369,5 @@ module.exports = {
   updateListItemPrice,
   findListItemsByProductNumber,
   updatePricesByProductNumber,
+  toggleListItemAnchor,
 };
