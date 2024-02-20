@@ -13,6 +13,7 @@ router
 router
   .route('/:baseProductListItemId/remove-comparison-product/:comparisonProductListItemId?')
   .post(auth(), validate(listItemValidation.removeComparisonProduct), listItemController.removeComparisonProduct);
+router
   .route('/')
   .get(auth(), validate(listItemValidation.getListItem), listItemController.getListItem)
   .patch(
