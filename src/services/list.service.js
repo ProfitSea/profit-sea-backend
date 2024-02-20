@@ -128,7 +128,7 @@ const getListById = async (listId) => {
 };
 
 const formatProduct = (product) => {
-  return `productNumber: ${product.productNumber},  ${product.brand}, ${product.vendor},  ${product.description}, $${product.price}/${product.unit}, ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice}`;
+  return ` productNumber: ${product.productNumber},  ${product.brand}, ${product.vendor},  description: ${product.description}, price/unit: $${product.price}/${product.unit}, packSize/unit: ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice} `;
 };
 
 const formatProductGroup = (productGroup) => {
@@ -147,6 +147,8 @@ const formatList = (list) => {
 const getListAnalysis = async (listId) => {
   const list = await getListById(listId);
   // Initialize an object to store grouped products
+  console.log({ listItem: list.listItems });
+
   const groupedProducts = {};
   // Iterate through each list item
   list.listItems.forEach((listItem) => {
