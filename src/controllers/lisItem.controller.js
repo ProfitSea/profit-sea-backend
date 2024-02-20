@@ -30,9 +30,33 @@ const updateListItemPrice = catchAsync(async (req, res) => {
   res.send({ listItem, message: 'Price updated' });
 });
 
+const getListItem = catchAsync(async (req, res) => {
+  const listItems = await listItemService.findListItemsByProductNumber(req.user, req.query);
+  res.send({ listItems });
+});
+
+const updateListItemPricesByProductNumber = catchAsync(async (req, res) => {
+  const listItems = await listItemService.updatePricesByProductNumber(req.user, req.query, req.body.prices);
+  res.send({ listItems });
+});
+
+const getListItemById = catchAsync(async (req, res) => {
+  const listItem = await listItemService.getListItemById(req.params.id);
+  res.send({ listItem });
+});
+
+const toggleListItemAnchor = catchAsync(async (req, res) => {
+  const listItem = await listItemService.toggleListItemAnchor(req.user, req.params.id);
+  res.send({ listItem, message: 'List item anchored' });
+});
+
 module.exports = {
   addComparisonProduct,
   removeComparisonProduct,
   updateListItemQuantity,
   updateListItemPrice,
+  getListItem,
+  updateListItemPricesByProductNumber,
+  getListItemById,
+  toggleListItemAnchor,
 };

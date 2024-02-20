@@ -1,5 +1,33 @@
 const Joi = require('joi');
 const { objectId } = require('./custom.validation');
+const { priceValidation } = require('./product.validation');
+
+const getListItem = {
+  query: {
+    productNumber: Joi.string().required(),
+  },
+};
+
+const getListItemById = {
+  params: Joi.object().keys({
+    id: Joi.string().custom(objectId).required(),
+  }),
+};
+
+const toggleListItemAnchor = {
+  params: Joi.object().keys({
+    id: Joi.string().custom(objectId).required(),
+  }),
+};
+
+const updateListItemPricesByProductNumber = {
+  query: {
+    productNumber: Joi.string().required(),
+  },
+  body: {
+    prices: Joi.array().items(priceValidation).required(),
+  },
+};
 
 const addComparisonProduct = {
   params: Joi.object().keys({
@@ -26,12 +54,7 @@ const updateListItemQuantity = {
 const updateListItemPrice = {
   body: Joi.object().keys({
     listItemId: Joi.string().custom(objectId).required(),
-    prices: Joi.array()
-      .items({
-        saleUnitId: Joi.string().custom(objectId).required(),
-        price: Joi.number().integer().required().greater(0),
-      })
-      .min(1),
+    prices: Joi.array().items(priceValidation).required(),
   }),
 };
 
@@ -40,4 +63,8 @@ module.exports = {
   removeComparisonProduct,
   updateListItemQuantity,
   updateListItemPrice,
+  getListItem,
+  updateListItemPricesByProductNumber,
+  getListItemById,
+  toggleListItemAnchor,
 };

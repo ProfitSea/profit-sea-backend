@@ -13,6 +13,18 @@ router
 router
   .route('/:baseProductListItemId/remove-comparison-product/:comparisonProductListItemId?')
   .post(auth(), validate(listItemValidation.removeComparisonProduct), listItemController.removeComparisonProduct);
+  .route('/')
+  .get(auth(), validate(listItemValidation.getListItem), listItemController.getListItem)
+  .patch(
+    auth(),
+    validate(listItemValidation.updateListItemPricesByProductNumber),
+    listItemController.updateListItemPricesByProductNumber
+  );
+
+router.route('/:id').get(auth(), validate(listItemValidation.getListItemById), listItemController.getListItemById);
+router
+  .route('/toggle-anchor/:id')
+  .patch(auth(), validate(listItemValidation.toggleListItemAnchor), listItemController.toggleListItemAnchor);
 
 router
   .route('/quantity')

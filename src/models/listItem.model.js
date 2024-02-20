@@ -55,6 +55,10 @@ const listItemSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
+    isAnchored: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
