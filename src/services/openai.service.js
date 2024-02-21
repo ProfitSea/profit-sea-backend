@@ -93,7 +93,41 @@ class OpenAiService {
     });
 
     const recommendedProduct = recommendation?.choices[0].message.content;
-    return recommendedProduct;
+
+    console.log({ recommendedProduct });
+    console.log('');
+
+    const recommendedProductArray = recommendedProduct.split('\n');
+
+    const recommendedProductObject = {};
+
+    recommendedProductArray.forEach((elem) => {
+      const [key, value] = elem.split(': ');
+      if (key && value) {
+        const keyWithoutSpaces = key.trim().replace(/\s+/g, '_').toLowerCase();
+        switch (true) {
+          case keyWithoutSpaces.includes('vendor'):
+            recommendedProductObject['vendor'] = value.trim();
+            break;
+          case keyWithoutSpaces.includes('id'):
+            recommendedProductObject['productId'] = value.trim();
+            break;
+          case keyWithoutSpaces.includes('product'):
+            recommendedProductObject['product'] = value.trim();
+            break;
+          case keyWithoutSpaces.includes('savings'):
+            recommendedProductObject['priceSavings'] = value.trim();
+            break;
+          case keyWithoutSpaces.includes('reason'):
+            recommendedProductObject['suggestionReason'] = value.trim();
+            break;
+          // Add more cases if needed
+        }
+      }
+    });
+
+    console.log(recommendedProductObject);
+    return recommendedProductObject;
   }
 }
 

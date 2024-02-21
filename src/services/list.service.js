@@ -203,6 +203,14 @@ const getListAnalysis = async (listId) => {
     })
   );
   // return [groupedProductsArray, recommendations];
+
+  console.log({ recommendations });
+  console.log('typeof recommendations');
+  console.log(typeof recommendations);
+
+  listItemsWithComparisonProducts.map((elem, index) => {
+    elem.recommendation = recommendations[index];
+  });
   return listItemsWithComparisonProducts;
 };
 
