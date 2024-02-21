@@ -172,6 +172,9 @@ const getListAnalysis = async (listId) => {
   // Iterate through each list item
   for (const listItem of list.listItems) {
     // If it's a base product, add it to groupedProducts and listItemsWithComparisonProducts
+    if (listItem.isAnchored) {
+      listItemWithNoComparisonProducts.push(extractProductInfo(listItem));
+    }
     if (listItem.isBaseProduct) {
       const listItemWithNoComparisonProducts = { ...extractProductInfo(listItem), comparisonProducts: [] };
       listItemsWithComparisonProducts.push(listItemWithNoComparisonProducts);
