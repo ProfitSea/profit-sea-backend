@@ -91,14 +91,8 @@ class OpenAiService {
       max_tokens: 150,
       n: 1,
     });
-
     const recommendedProduct = recommendation?.choices[0].message.content;
-
-    console.log({ recommendedProduct });
-    console.log('');
-
     const recommendedProductArray = recommendedProduct.split('\n');
-
     const recommendedProductObject = {};
 
     recommendedProductArray.forEach((elem) => {
@@ -125,8 +119,6 @@ class OpenAiService {
         }
       }
     });
-
-    console.log(recommendedProductObject);
     return recommendedProductObject;
   }
 }

@@ -160,57 +160,55 @@ function extractProductInfo(item) {
  * @param {ObjectId} listId
  * @returns {Promise<List>}
  */
+
 const getListAnalysis = async (listId) => {
+  // Retrieve the list by ID
   const list = await getListById(listId);
+
+  // Initialize groupedProducts and listItemsWithComparisonProducts
   const groupedProducts = {};
   const listItemsWithComparisonProducts = [];
-  // Iterate through each list item
-  list.listItems.forEach((listItem) => {
-    // If it's a base product, add it to groupedProducts
-    if (listItem.isBaseProduct) {
-      // Extract product information
-      let listItemWithNoComparisonProducts = extractProductInfo(listItem);
-      listItemWithNoComparisonProducts.comparisonProducts = [];
 
+  // Iterate through each list item
+  for (const listItem of list.listItems) {
+    // If it's a base product, add it to groupedProducts and listItemsWithComparisonProducts
+    if (listItem.isBaseProduct) {
+      const listItemWithNoComparisonProducts = { ...extractProductInfo(listItem), comparisonProducts: [] };
       listItemsWithComparisonProducts.push(listItemWithNoComparisonProducts);
-      // Add product information to groupedProducts for the AI analysis
-      const productInfo = extractProductInfo(listItem);
-      groupedProducts[listItem.product._id.toString()] = [productInfo];
+      groupedProducts[listItem.product._id.toString()] = [extractProductInfo(listItem)];
+
       // Iterate through comparison products
-      listItem.comparisonProducts.forEach((comparisonProduct) => {
+      for (const comparisonProduct of listItem.comparisonProducts) {
         const comparisonProductInfo = extractProductInfo(comparisonProduct);
-        // Add comparison product information to groupedProducts
         groupedProducts[listItem.product._id.toString()].push(comparisonProductInfo);
-        listItemsWithComparisonProducts.map((elem, index) => {
-          if (elem.listItemId === listItem._id.toString()) {
-            elem.comparisonProducts.push(comparisonProductInfo);
-          }
-        });
-      });
+
+        // Update comparison products for list items
+        const listItemToUpdate = listItemsWithComparisonProducts.find((elem) => elem.listItemId === listItem._id.toString());
+        listItemToUpdate.comparisonProducts.push(comparisonProductInfo);
+      }
     }
-  });
+  }
+
   // Convert groupedProducts object to array
   const groupedProductsArray = Object.values(groupedProducts);
+
+  // Format list for recommendation for AI
   const productInfoForRecommendation = formatList(groupedProductsArray);
-  // Iterate through each group array and send recommendation requests in parallel
+
+  // Send recommendation requests in parallel
   const recommendations = await Promise.all(
     productInfoForRecommendation.map(async (group) => {
-      // Join the current group array to create a single string
       const groupString = group.join();
       const openAiService = new OpenAiService();
-      // Send the current group string to get a recommendation
       return await openAiService.getRecomendation(groupString);
     })
   );
-  // return [groupedProductsArray, recommendations];
 
-  console.log({ recommendations });
-  console.log('typeof recommendations');
-  console.log(typeof recommendations);
-
-  listItemsWithComparisonProducts.map((elem, index) => {
+  // Assign recommendations to list items
+  listItemsWithComparisonProducts.forEach((elem, index) => {
     elem.recommendation = recommendations[index];
   });
+
   return listItemsWithComparisonProducts;
 };
 
