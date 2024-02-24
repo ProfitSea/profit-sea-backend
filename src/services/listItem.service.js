@@ -28,6 +28,27 @@ const getListItemById = async (listItemId) => {
 };
 
 /**
+ * Get listItem by productNumber
+ * @param {ObjectId} listItemId
+ * @returns {Promise<ListItem>}
+ */
+const getListItemByProductNumber = async (productNumber) => {
+  return ListItem.findOne({ productNumber: productNumber }).populate([
+    {
+      path: 'product',
+    },
+    {
+      path: 'saleUnitQuantities.saleUnit',
+      model: 'ProductSaleUnit',
+    },
+    {
+      path: 'saleUnitQuantities.price',
+      model: 'Price',
+    },
+  ]);
+};
+
+/**
  * Query for lists
  * @param {Object} filter - Mongo filter
  * @param {Object} options - Query options
@@ -421,6 +442,7 @@ module.exports = {
   createListItem,
   queryListItems,
   getListItemById,
+  getListItemByProductNumber,
   updateListItemById,
   deleteListItemById,
   updateListItemQuantity,

@@ -164,55 +164,36 @@ function extractProductInfo(item) {
 const getListAnalysis = async (listId) => {
   // Retrieve the list by ID
   const list = await getListById(listId);
-
-  // Initialize groupedProducts and listItemsWithComparisonProducts
   const groupedProducts = {};
-  const listItemsWithComparisonProducts = [];
-
-  // Iterate through each list item
   for (const listItem of list.listItems) {
-    // If it's a base product, add it to groupedProducts and listItemsWithComparisonProducts
-    if (listItem.isAnchored) {
-      listItemWithNoComparisonProducts.push(extractProductInfo(listItem));
-    }
-    if (listItem.isBaseProduct) {
-      const listItemWithNoComparisonProducts = { ...extractProductInfo(listItem), comparisonProducts: [] };
-      listItemsWithComparisonProducts.push(listItemWithNoComparisonProducts);
-      groupedProducts[listItem.product._id.toString()] = [extractProductInfo(listItem)];
-
-      // Iterate through comparison products
-      for (const comparisonProduct of listItem.comparisonProducts) {
-        const comparisonProductInfo = extractProductInfo(comparisonProduct);
-        groupedProducts[listItem.product._id.toString()].push(comparisonProductInfo);
-
-        // Update comparison products for list items
-        const listItemToUpdate = listItemsWithComparisonProducts.find((elem) => elem.listItemId === listItem._id.toString());
-        listItemToUpdate.comparisonProducts.push(comparisonProductInfo);
-      }
-    }
+    groupedProducts[listItem.product._id.toString()] = [extractProductInfo(listItem)];
   }
-
-  // Convert groupedProducts object to array
+  // // Iterate through comparison products
   const groupedProductsArray = Object.values(groupedProducts);
 
   // Format list for recommendation for AI
-  const productInfoForRecommendation = formatList(groupedProductsArray);
+  const productInfoForRecommendationForAI = formatList(groupedProductsArray);
 
   // Send recommendation requests in parallel
   const recommendations = await Promise.all(
-    productInfoForRecommendation.map(async (group) => {
+    productInfoForRecommendationForAI.map(async (group) => {
       const groupString = group.join();
       const openAiService = new OpenAiService();
       return await openAiService.getRecomendation(groupString);
     })
   );
-
-  // Assign recommendations to list items
-  listItemsWithComparisonProducts.forEach((elem, index) => {
-    elem.recommendation = recommendations[index];
+  list.listItems.map(async (listItem, index) => {
+    if (listItem.isBaseProduct) {
+      listItem.recommendation = {};
+      listItem.recommendation.priceSavings = recommendations[index].priceSavings;
+      listItem.recommendation.reason = recommendations[index].suggestionReason;
+      const res = await listItemService.getListItemByProductNumber(recommendations[index].productNumber);
+      listItem.recommendation.listItemId = res.id;
+      listItem.save();
+    }
   });
-
-  return listItemsWithComparisonProducts;
+  const isBaseProductListItems = list.listItems.filter((listItem) => listItem.isBaseProduct || listItem.isAnchored);
+  return isBaseProductListItems;
 };
 
 /**
