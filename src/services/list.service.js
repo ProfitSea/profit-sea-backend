@@ -194,7 +194,7 @@ const getListAnalysis = async (listId) => {
       const listItemByProductNumber = await listItemService.getListItemByProductNumber(
         recommendations[index]?.productNumber
       );
-      if (listItemByProductNumber) listItem.recommendation.listItemId = res.id;
+      if (listItemByProductNumber) listItem.recommendation.listItemId = listItemByProductNumber.id;
       listItem.save();
     }
   });
