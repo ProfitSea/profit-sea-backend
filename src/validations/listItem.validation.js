@@ -31,15 +31,15 @@ const updateListItemPricesByProductNumber = {
 
 const addComparisonProduct = {
   params: Joi.object().keys({
-    baseProductListItemId: Joi.string().custom(objectId),
-    comparisonProductListItemId: Joi.string().custom(objectId).optional(),
+    baseListItemId: Joi.string().custom(objectId),
+    comparisonListItemId: Joi.string().custom(objectId).optional(),
   }),
 };
 
 const removeComparisonProduct = {
   params: Joi.object().keys({
-    baseProductListItemId: Joi.string().custom(objectId),
-    comparisonProductListItemId: Joi.string().custom(objectId).optional(),
+    baseListItemId: Joi.string().custom(objectId),
+    comparisonListItemId: Joi.string().custom(objectId).optional(),
   }),
 };
 

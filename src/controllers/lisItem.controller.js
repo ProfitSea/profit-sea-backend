@@ -4,8 +4,8 @@ const { listItemService } = require('../services');
 const addComparisonProduct = catchAsync(async (req, res) => {
   const [productAddedToComparison, message] = await listItemService.addComparisonProduct(
     req.user,
-    req.params.baseProductListItemId,
-    req.params.comparisonProductListItemId,
+    req.params.baseListItemId,
+    req.params.comparisonListItemId,
     req.query.action
   );
   res.send({ message, productAddedToComparison });
@@ -14,8 +14,8 @@ const addComparisonProduct = catchAsync(async (req, res) => {
 const removeComparisonProduct = catchAsync(async (req, res) => {
   const [productRemovedFromComparison, message] = await listItemService.removeComparisonProduct(
     req.user,
-    req.params.baseProductListItemId,
-    req.params.comparisonProductListItemId
+    req.params.baseListItemId,
+    req.params.comparisonListItemId
   );
   res.send({ message, productRemovedFromComparison });
 });

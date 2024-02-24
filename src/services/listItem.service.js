@@ -192,38 +192,36 @@ const updateListItemPrice = async (user, listItemId, prices) => {
  * @param {Array} prices
  * @returns {Promise<Product>}
  */
-const updateComparisonProduct = async (user, baseProductListItemId, comparisonProductListItemId, isAddOperation) => {
-  // Check if baseProductListItemId exists
-  const baseProductExists = baseProductListItemId ? await ListItem.exists({ _id: baseProductListItemId }) : false;
+const updateComparisonProduct = async (user, baseListItemId, comparisonListItemId, isAddOperation) => {
+  // Check if baseListItemId exists
+  const baseProductExists = baseListItemId ? await ListItem.exists({ _id: baseListItemId }) : false;
   let message = '';
-  // Check if comparisonProductListItemId exists
-  const comparisonItemExists = comparisonProductListItemId
-    ? await ListItem.exists({ _id: comparisonProductListItemId })
-    : true;
+  // Check if comparisonListItemId exists
+  const comparisonItemExists = comparisonListItemId ? await ListItem.exists({ _id: comparisonListItemId }) : true;
 
   // Perform checks based on the specified conditions
   if (
-    (baseProductListItemId && baseProductExists && !comparisonProductListItemId) ||
-    (baseProductListItemId && baseProductExists && comparisonProductListItemId && comparisonItemExists)
+    (baseListItemId && baseProductExists && !comparisonListItemId) ||
+    (baseListItemId && baseProductExists && comparisonListItemId && comparisonItemExists)
   ) {
     // Determine the update operation based on the flag
     let updateQuery;
     if (isAddOperation) {
-      updateQuery = comparisonProductListItemId
-        ? { $addToSet: { comparisonProducts: comparisonProductListItemId } }
+      updateQuery = comparisonListItemId
+        ? { $addToSet: { comparisonProducts: comparisonListItemId } }
         : { $set: { isBaseProduct: true } };
-      message = comparisonProductListItemId
+      message = comparisonListItemId
         ? 'List item added to comparison group succesfully'
         : 'Product group created succesfully';
     } else {
-      updateQuery = comparisonProductListItemId
-        ? { $pull: { comparisonProducts: comparisonProductListItemId } }
+      updateQuery = comparisonListItemId
+        ? { $pull: { comparisonProducts: comparisonListItemId } }
         : { $set: { isBaseProduct: false } };
-      message = comparisonProductListItemId ? 'List item  removed succesfully' : 'Product group removed succesfully';
+      message = comparisonListItemId ? 'List item  removed succesfully' : 'Product group removed succesfully';
     }
 
     // Continue performing the operations
-    const updatedResult = await ListItem.findOneAndUpdate({ _id: baseProductListItemId }, updateQuery, { new: true });
+    const updatedResult = await ListItem.findOneAndUpdate({ _id: baseListItemId }, updateQuery, { new: true });
 
     if (!updatedResult) {
       throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
@@ -236,12 +234,12 @@ const updateComparisonProduct = async (user, baseProductListItemId, comparisonPr
   throw new ApiError(httpStatus.NOT_FOUND, 'List item not found to compare');
 };
 
-const addComparisonProduct = async (user, baseProductListItemId, comparisonProductListItemId) => {
-  return await updateComparisonProduct(user, baseProductListItemId, comparisonProductListItemId, true);
+const addComparisonProduct = async (user, baseListItemId, comparisonListItemId) => {
+  return await updateComparisonProduct(user, baseListItemId, comparisonListItemId, true);
 };
 
-const removeComparisonProduct = async (user, baseProductListItemId, comparisonProductListItemId) => {
-  return await updateComparisonProduct(user, baseProductListItemId, comparisonProductListItemId, false);
+const removeComparisonProduct = async (user, baseListItemId, comparisonListItemId) => {
+  return await updateComparisonProduct(user, baseListItemId, comparisonListItemId, false);
 };
 
 const updateListItemPriceUsingSaleUnit = async (user, listItemId, prices) => {
