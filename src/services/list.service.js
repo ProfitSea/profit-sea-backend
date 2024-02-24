@@ -166,14 +166,18 @@ const getListAnalysis = async (listId) => {
   const list = await getListById(listId);
   const groupedProducts = {};
   for (const listItem of list.listItems) {
-    groupedProducts[listItem.product._id.toString()] = [extractProductInfo(listItem)];
+    if (listItem.isBaseProduct) {
+      groupedProducts[listItem.product._id.toString()] = [];
+      groupedProducts[listItem.product._id.toString()].push(extractProductInfo(listItem));
+      for (const comparisonListItem of listItem.comparisonProducts) {
+        groupedProducts[listItem.product._id.toString()].push(extractProductInfo(comparisonListItem));
+      }
+    }
   }
   // // Iterate through comparison products
   const groupedProductsArray = Object.values(groupedProducts);
-
   // Format list for recommendation for AI
   const productInfoForRecommendationForAI = formatList(groupedProductsArray);
-
   // Send recommendation requests in parallel
   const recommendations = await Promise.all(
     productInfoForRecommendationForAI.map(async (group) => {
@@ -185,14 +189,19 @@ const getListAnalysis = async (listId) => {
   list.listItems.map(async (listItem, index) => {
     if (listItem.isBaseProduct) {
       listItem.recommendation = {};
-      listItem.recommendation.priceSavings = recommendations[index].priceSavings;
-      listItem.recommendation.reason = recommendations[index].suggestionReason;
-      const res = await listItemService.getListItemByProductNumber(recommendations[index].productNumber);
-      listItem.recommendation.listItemId = res.id;
+      listItem.recommendation.priceSavings = recommendations[index]?.priceSavings;
+      listItem.recommendation.reason = recommendations[index]?.suggestionReason;
+      const listItemByProductNumber = await listItemService.getListItemByProductNumber(
+        recommendations[index]?.productNumber
+      );
+      if (listItemByProductNumber) listItem.recommendation.listItemId = res.id;
       listItem.save();
     }
   });
-  const isBaseProductListItems = list.listItems.filter((listItem) => listItem.isBaseProduct || listItem.isAnchored);
+  list.save();
+
+  const list2 = await getListById(listId);
+  const isBaseProductListItems = list2.listItems.filter((listItem) => listItem.isBaseProduct || listItem.isAnchored);
   return isBaseProductListItems;
 };
 
