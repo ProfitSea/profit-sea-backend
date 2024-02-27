@@ -161,22 +161,24 @@ function extractProductInfo(item) {
  * @returns {Promise<List>}
  */
 
+// list.service.js
 const getListAnalysis = async (listId) => {
   // Retrieve the list by ID
   const list = await getListById(listId);
   const groupedProducts = {};
   for (const listItem of list.listItems) {
     if (listItem.isBaseProduct) {
-      groupedProducts[listItem.product._id.toString()] = [];
-      groupedProducts[listItem.product._id.toString()].push(extractProductInfo(listItem));
+      const productId = listItem.product._id.toString();
+      if (!groupedProducts[productId]) {
+        groupedProducts[productId] = [];
+      }
+      groupedProducts[productId].push(extractProductInfo(listItem));
       for (const comparisonListItem of listItem.comparisonProducts) {
-        groupedProducts[listItem.product._id.toString()].push(extractProductInfo(comparisonListItem));
+        groupedProducts[productId].push(extractProductInfo(comparisonListItem));
       }
     }
   }
-  // // Iterate through comparison products
   const groupedProductsArray = Object.values(groupedProducts);
-  // Format list for recommendation for AI
   const productInfoForRecommendationForAI = formatList(groupedProductsArray);
   // Send recommendation requests in parallel
   const recommendations = await Promise.all(
@@ -186,7 +188,9 @@ const getListAnalysis = async (listId) => {
       return await openAiService.getRecomendation(groupString);
     })
   );
-  list.listItems.map(async (listItem, index) => {
+
+  // Update list items with recommendations
+  const updatePromises = list.listItems.map(async (listItem, index) => {
     if (listItem.isBaseProduct) {
       listItem.recommendation = {};
       listItem.recommendation.priceSavings = recommendations[index]?.priceSavings;
@@ -194,14 +198,18 @@ const getListAnalysis = async (listId) => {
       const listItemByProductNumber = await listItemService.getListItemByProductNumber(
         recommendations[index]?.productNumber
       );
-      if (listItemByProductNumber) listItem.recommendation.listItemId = listItemByProductNumber.id;
-      listItem.save();
+      if (listItemByProductNumber) {
+        listItem.recommendation.listItemId = listItemByProductNumber.id;
+      }
+      await listItem.save(); // Ensure each save is awaited
     }
   });
-  list.save();
 
-  const list2 = await getListById(listId);
-  const isBaseProductListItems = list2.listItems.filter((listItem) => listItem.isBaseProduct || listItem.isAnchored);
+  await Promise.all(updatePromises); // Wait for all updates to complete
+  await list.save(); // Save the updated list
+  // Fetch updated list after saving
+  const updatedList = await getListById(listId);
+  const isBaseProductListItems = updatedList.listItems.filter((listItem) => listItem.isBaseProduct || listItem.isAnchored);
   return isBaseProductListItems;
 };
 
