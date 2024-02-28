@@ -157,14 +157,25 @@ function extractProductInfo(item) {
 
 /**
  * Get list by id
- * @param {ObjectId} listId
+ * @param {User} user - User authenticated within the active session
+ * @param {ObjectId} listId list ID to analyze
  * @returns {Promise<List>}
  */
 
 // list.service.js
-const getListAnalysis = async (listId) => {
+const getListAnalysis = async (user, listId) => {
   // Retrieve the list by ID
   const list = await getListById(listId);
+
+  if (!list) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+  if (list.user.toString() !== user.id) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+  }
+  if (!list.itemsCount) {
+    return [];
+  }
   const groupedProducts = {};
   for (const listItem of list.listItems) {
     if (listItem.isBaseProduct) {

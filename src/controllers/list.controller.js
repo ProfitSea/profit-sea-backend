@@ -42,8 +42,9 @@ const getList = catchAsync(async (req, res) => {
   }
   res.send({ list });
 });
+
 const getListAnalysis = catchAsync(async (req, res) => {
-  const list = await listService.getListAnalysis(req.params.listId);
+  const list = await listService.getListAnalysis(req.user, req.params.listId);
   if (!list) {
     throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
   }
@@ -74,5 +75,5 @@ module.exports = {
   updateListName,
   addListItem,
   removeListItem,
-  getListAnalysis
+  getListAnalysis,
 };

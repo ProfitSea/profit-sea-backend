@@ -188,9 +188,9 @@ const updateListItemPrice = async (user, listItemId, prices) => {
 /**
  * Update comparison products list
  * @param {User} user - User authenticated within the active session
- * @param {ObjectId} baseListItemId - The ID of the base list item.
- * @param {ObjectId} comparisonListItemId - The ID of the comparison list item.
- * @param {boolean} isAddOperation - Indicates whether it's an add operation.
+ * @param {ObjectId} baseListItemId - Base list item ID.
+ * @param {ObjectId} comparisonListItemId - Comparison list item ID.
+ * @param {boolean} isAddOperation - Add or remove element from comparison products list
  * @returns {Promise<Array>} - A promise that resolves to an array containing updated list item and message.
  */
 const updateComparisonProduct = async (user, baseListItemId, comparisonListItemId, isAddOperation) => {
