@@ -186,11 +186,12 @@ const updateListItemPrice = async (user, listItemId, prices) => {
 };
 
 /**
- * TODO: UPDATE COMMENTS
- * Add comparison product
- * @param {ObjectId} listItemId
- * @param {Array} prices
- * @returns {Promise<Product>}
+ * Update comparison products list
+ * @param {User} user - User authenticated within the active session
+ * @param {ObjectId} baseListItemId - The ID of the base list item.
+ * @param {ObjectId} comparisonListItemId - The ID of the comparison list item.
+ * @param {boolean} isAddOperation - Indicates whether it's an add operation.
+ * @returns {Promise<Array>} - A promise that resolves to an array containing updated list item and message.
  */
 const updateComparisonProduct = async (user, baseListItemId, comparisonListItemId, isAddOperation) => {
   const baseListItem = await getListItemById(baseListItemId);
@@ -214,8 +215,6 @@ const updateComparisonProduct = async (user, baseListItemId, comparisonListItemI
       $pull: { comparisonProducts: comparisonListItemId },
     };
     message = 'List item removed to comparison group succesfully';
-    console.log({ baseListItem });
-    console.log({ comparisonListItem: baseListItem.comparisonProducts.length });
     if (baseListItem.comparisonProducts.length === 1) {
       updateQuery['$set'] = { isBaseProduct: false };
       message = 'Product group removed succesfully';
