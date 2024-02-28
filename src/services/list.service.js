@@ -147,13 +147,12 @@ function extractProductInfo(item) {
 }
 
 /**
- * Get list by id
+ * Retrieve recommendations for list analysis based on the products selected for comparison
  * @param {User} user - User authenticated within the active session
  * @param {ObjectId} listId list ID to analyze
  * @returns {Promise<List>}
  */
 
-// list.service.js
 const getListAnalysis = async (user, listId) => {
   // Retrieve the list by ID
   const list = await getListById(listId);
