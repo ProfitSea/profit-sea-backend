@@ -32,17 +32,8 @@ const addListItem = async (user, listId, product) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
   }
 
-  const openAiService = new OpenAiService();
-  const category = await openAiService.getProductCategory(product?.brand, product?.description);
+  const listItem = await listItemService.createListItem(user, listId, product);
 
-  const productItem = { ...product, category };
-  console.log('product item to add->>');
-  console.log(productItem);
-  const listItem = await listItemService.createListItem(user, listId, productItem);
-
-  console.log('open ai');
-  console.log({ category });
-  console.log({ productItem });
   if (!listItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
   }
@@ -212,7 +203,7 @@ const getListAnalysis = async (user, listId) => {
       if (listItemByProductNumber) {
         listItem.recommendation.listItemId = listItemByProductNumber.id;
       }
-      await listItem.save(); // Ensure each save is awaited
+      await listItem.save();
     }
   });
 
