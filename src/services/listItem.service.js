@@ -193,45 +193,39 @@ const updateListItemPrice = async (user, listItemId, prices) => {
  * @returns {Promise<Product>}
  */
 const updateComparisonProduct = async (user, baseListItemId, comparisonListItemId, isAddOperation) => {
-  // Check if baseListItemId exists
-  const baseProductExists = baseListItemId ? await ListItem.exists({ _id: baseListItemId }) : false;
-  let message = '';
-  // Check if comparisonListItemId exists
-  const comparisonItemExists = comparisonListItemId ? await ListItem.exists({ _id: comparisonListItemId }) : true;
-
-  // Perform checks based on the specified conditions
-  if (
-    (baseListItemId && baseProductExists && !comparisonListItemId) ||
-    (baseListItemId && baseProductExists && comparisonListItemId && comparisonItemExists)
-  ) {
-    // Determine the update operation based on the flag
-    let updateQuery;
-    if (isAddOperation) {
-      updateQuery = comparisonListItemId
-        ? { $addToSet: { comparisonProducts: comparisonListItemId } }
-        : { $set: { isBaseProduct: true } };
-      message = comparisonListItemId
-        ? 'List item added to comparison group succesfully'
-        : 'Product group created succesfully';
-    } else {
-      updateQuery = comparisonListItemId
-        ? { $pull: { comparisonProducts: comparisonListItemId } }
-        : { $set: { isBaseProduct: false } };
-      message = comparisonListItemId ? 'List item  removed succesfully' : 'Product group removed succesfully';
-    }
-
-    // Continue performing the operations
-    const updatedResult = await ListItem.findOneAndUpdate({ _id: baseListItemId }, updateQuery, { new: true });
-
-    if (!updatedResult) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
-    }
-
-    return [updatedResult, message];
+  const baseListItem = await getListItemById(baseListItemId);
+  const comparisonListItem = await getListItemById(comparisonListItemId);
+  if (!baseListItem || !comparisonListItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
   }
-
-  // Throw error if conditions are not met
-  throw new ApiError(httpStatus.NOT_FOUND, 'List item not found to compare');
+  if (baseListItem.user.toString() !== user.id || comparisonListItem.user.toString() !== user.id) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+  }
+  let message = '';
+  let updateQuery;
+  if (isAddOperation) {
+    updateQuery = {
+      $set: { isBaseProduct: true },
+      $addToSet: { comparisonProducts: comparisonListItemId },
+    };
+    message = 'List item added to comparison group succesfully';
+  } else {
+    updateQuery = {
+      $pull: { comparisonProducts: comparisonListItemId },
+    };
+    message = 'List item removed to comparison group succesfully';
+    console.log({ baseListItem });
+    console.log({ comparisonListItem: baseListItem.comparisonProducts.length });
+    if (baseListItem.comparisonProducts.length === 1) {
+      updateQuery['$set'] = { isBaseProduct: false };
+      message = 'Product group removed succesfully';
+    }
+  }
+  const updatedResult = await ListItem.findOneAndUpdate({ _id: baseListItemId }, updateQuery, { new: true });
+  if (!updatedResult) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+  return [updatedResult, message];
 };
 
 const addComparisonProduct = async (user, baseListItemId, comparisonListItemId) => {
