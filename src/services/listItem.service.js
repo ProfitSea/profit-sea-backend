@@ -194,6 +194,9 @@ const updateListItemPrice = async (user, listItemId, prices) => {
  * @returns {Promise<Array>} - A promise that resolves to an array containing updated list item and message.
  */
 const updateComparisonProduct = async (user, baseListItemId, comparisonListItemId, isAddOperation) => {
+  if (baseListItemId === comparisonListItemId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Comparison items must differ from the base product');
+  }
   const baseListItem = await getListItemById(baseListItemId);
   const comparisonListItem = await getListItemById(comparisonListItemId);
   if (!baseListItem || !comparisonListItem) {
