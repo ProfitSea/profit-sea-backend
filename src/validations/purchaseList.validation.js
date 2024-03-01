@@ -3,7 +3,10 @@ const { objectId } = require('./custom.validation');
 const { productSchema } = require('./product.validation');
 
 const createPurchaseList = {
-  body: Joi.object().keys({}),
+  body: Joi.object().keys({
+    name: Joi.string(),
+    listId: Joi.string().custom(objectId),
+  }),
 };
 
 const getPurchaseList = {

@@ -54,14 +54,14 @@ purchaseListSchema.statics.isNameTaken = async function (name, excludeUserId) {
 
 // Pre-save hook to update itemsCount before saving
 purchaseListSchema.pre('save', function (next) {
-  this.itemsCount = this.purchaselistItems.length;
+  this.itemsCount = this.purchaseListItems.length;
   next();
 });
 
 // Pre-updateOne hook to update itemsCount before updating
 purchaseListSchema.pre('updateOne', async function (next) {
   const docToUpdate = await this.model.findOne(this.getQuery());
-  this._update.itemsCount = docToUpdate.purchaselistItems.length;
+  this._update.itemsCount = docToUpdate.purchaseListItems.length;
   next();
 });
 

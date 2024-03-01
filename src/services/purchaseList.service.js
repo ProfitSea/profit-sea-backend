@@ -10,8 +10,12 @@ const { PurchaseList } = require('../models');
  * @param {Object} listBody
  * @returns {Promise<List>}
  */
-const createPurchaseList = async (user) => {
-  return PurchaseList.create({ user: user.id });
+const createPurchaseList = async (user, name, listId) => {
+  return PurchaseList.create({
+    name,
+    user: user.id,
+    list: listId,
+  });
 };
 
 module.exports = {
