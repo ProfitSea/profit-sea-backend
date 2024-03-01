@@ -40,17 +40,6 @@ const deletePurchaseList = {
   }),
 };
 
-const updatePurchaseListName = {
-  params: Joi.object().keys({
-    purchaseListId: Joi.string().custom(objectId).required(),
-  }),
-  body: Joi.object()
-    .keys({
-      name: Joi.string().required(),
-    })
-    .min(1),
-};
-
 const addPurchaseListItem = {
   params: Joi.object().keys({
     purchaseListId: Joi.string().custom(objectId).required(),
@@ -75,7 +64,6 @@ module.exports = {
   getPurchaseList,
   updatePurchaseList,
   deletePurchaseList,
-  updatePurchaseListName,
   addPurchaseListItem,
   removePurchaseListItem,
 };

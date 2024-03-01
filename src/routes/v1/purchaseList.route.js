@@ -11,4 +11,10 @@ router
   .post(auth(), validate(purchaseListValidation.createPurchaseList), purchaseListController.createPurchaseList)
   .get(auth(), validate(purchaseListValidation.getPurchaseLists), purchaseListController.getPurchaseLists);
 
+router
+  .route('/:purchaseListId')
+  .get(auth(), validate(purchaseListValidation.getPurchaseList), purchaseListController.getPurchaseList)
+  .patch(auth(), validate(purchaseListValidation.updatePurchaseList), purchaseListController.updatePurchaseList)
+  .delete(auth(), validate(purchaseListValidation.deleteList), purchaseListController.deletePurchaseList);
+
 module.exports = router;
