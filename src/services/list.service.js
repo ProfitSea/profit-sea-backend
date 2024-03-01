@@ -190,23 +190,22 @@ const getListAnalysis = async (user, listId) => {
     })
   );
 
-  // Update list items with recommendations
-  const updatePromises = list.listItems.map(async (listItem, index) => {
+  let indexCounter = 0;
+  for (const listItem of list.listItems) {
     if (listItem.isBaseProduct) {
       listItem.recommendation = {};
-      listItem.recommendation.priceSavings = recommendations[index]?.priceSavings;
-      listItem.recommendation.reason = recommendations[index]?.suggestionReason;
+      listItem.recommendation.priceSavings = recommendations[indexCounter]?.priceSavings;
+      listItem.recommendation.reason = recommendations[indexCounter]?.suggestionReason;
       const listItemByProductNumber = await listItemService.getListItemByProductNumber(
-        recommendations[index]?.productNumber
+        recommendations[indexCounter]?.productNumber
       );
       if (listItemByProductNumber) {
         listItem.recommendation.listItemId = listItemByProductNumber.id;
       }
       await listItem.save();
+      indexCounter = indexCounter + 1;
     }
-  });
-
-  await Promise.all(updatePromises); // Wait for all updates to complete
+  }
   await list.save(); // Save the updated list
   // Fetch updated list after saving
   const updatedList = await getListById(listId);
