@@ -168,7 +168,7 @@ const getListAnalysis = async (user, listId) => {
   }
   const groupedProducts = {};
   for (const listItem of list.listItems) {
-    if (listItem.isBaseProduct) {
+    if (listItem.isBaseProduct && !listItem.isAnchored) {
       const productId = listItem.product._id.toString();
       if (!groupedProducts[productId]) {
         groupedProducts[productId] = [];
@@ -180,6 +180,8 @@ const getListAnalysis = async (user, listId) => {
     }
   }
   const groupedProductsArray = Object.values(groupedProducts);
+  if (!groupedProductsArray.length) return [];
+
   const productInfoForRecommendationForAI = formatList(groupedProductsArray);
   // Send recommendation requests in parallel
   const recommendations = await Promise.all(
@@ -192,7 +194,7 @@ const getListAnalysis = async (user, listId) => {
 
   let indexCounter = 0;
   for (const listItem of list.listItems) {
-    if (listItem.isBaseProduct) {
+    if (listItem.isBaseProduct && !listItem.isAnchored) {
       listItem.recommendation = {};
       listItem.recommendation.priceSavings = recommendations[indexCounter]?.priceSavings;
       listItem.recommendation.reason = recommendations[indexCounter]?.suggestionReason;
@@ -209,7 +211,7 @@ const getListAnalysis = async (user, listId) => {
   await list.save(); // Save the updated list
   // Fetch updated list after saving
   const updatedList = await getListById(listId);
-  const isBaseProductListItems = updatedList.listItems.filter((listItem) => listItem.isBaseProduct || listItem.isAnchored);
+  const isBaseProductListItems = updatedList.listItems.filter((listItem) => listItem.isBaseProduct && !listItem.isAnchored);
   return isBaseProductListItems;
 };
 
