@@ -8,6 +8,7 @@ const router = express.Router();
 
 router
   .route('/')
-  .post(auth(), validate(purchaseListValidation.createPurchaseList), purchaseListController.createPurchaseList);
+  .post(auth(), validate(purchaseListValidation.createPurchaseList), purchaseListController.createPurchaseList)
+  .get(auth(), validate(purchaseListValidation.getPurchaseLists), purchaseListController.getPurchaseLists);
 
 module.exports = router;

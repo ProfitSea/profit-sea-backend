@@ -6,7 +6,7 @@ const { PurchaseList } = require('../models');
 // const { updateProductById } = require('./product.service');
 
 /**
- * Create a list
+ * Create a purchase list
  * @param {Object} listBody
  * @returns {Promise<List>}
  */
@@ -18,6 +18,21 @@ const createPurchaseList = async (user, name, listId) => {
   });
 };
 
+/**
+ * Query for purchase lists
+ * @param {Object} filter - Mongo filter
+ * @param {Object} options - Query options
+ * @param {string} [options.sortBy] - Sort option in the format: sortField:(desc|asc)
+ * @param {number} [options.limit] - Maximum number of results per page (default = 10)
+ * @param {number} [options.page] - Current page (default = 1)
+ * @returns {Promise<QueryResult>}
+ */
+const queryLists = async (filter, options) => {
+  const lists = await PurchaseList.paginate(filter, options);
+  return lists;
+};
+
 module.exports = {
   createPurchaseList,
+  queryLists,
 };

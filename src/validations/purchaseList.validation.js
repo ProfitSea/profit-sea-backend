@@ -9,6 +9,14 @@ const createPurchaseList = {
   }),
 };
 
+const getPurchaseLists = {
+  query: Joi.object().keys({
+    sortBy: Joi.string().allow('').allow(null),
+    limit: Joi.number().integer(),
+    page: Joi.number().integer(),
+  }),
+};
+
 const getPurchaseList = {
   params: Joi.object().keys({
     purchaseListId: Joi.string().custom(objectId),
@@ -62,10 +70,11 @@ const removePurchaseListItem = {
 };
 
 module.exports = {
+  createPurchaseList,
+  getPurchaseLists,
   getPurchaseList,
   updatePurchaseList,
   deletePurchaseList,
-  createPurchaseList,
   updatePurchaseListName,
   addPurchaseListItem,
   removePurchaseListItem,
