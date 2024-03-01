@@ -6,3 +6,4 @@ module.exports.productService = require('./product.service');
 module.exports.apiKeyService = require('./apiKey.service');
 module.exports.listService = require('./list.service');
 module.exports.listItemService = require('./listItem.service');
+module.exports.purchaseListService = require('./purchaseList.service');
