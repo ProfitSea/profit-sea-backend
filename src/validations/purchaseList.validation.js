@@ -1,6 +1,5 @@
 const Joi = require('joi');
 const { objectId } = require('./custom.validation');
-const { productSchema } = require('./product.validation');
 
 const createPurchaseList = {
   body: Joi.object().keys({
@@ -43,12 +42,8 @@ const deletePurchaseList = {
 const addPurchaseListItem = {
   params: Joi.object().keys({
     purchaseListId: Joi.string().custom(objectId).required(),
+    listItemId: Joi.string().custom(objectId).required(),
   }),
-  body: Joi.object()
-    .keys({
-      product: productSchema,
-    })
-    .min(1),
 };
 
 const removePurchaseListItem = {

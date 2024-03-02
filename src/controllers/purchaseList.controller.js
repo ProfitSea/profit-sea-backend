@@ -18,11 +18,11 @@ const getPurchaseLists = catchAsync(async (req, res) => {
 });
 
 const getPurchaseList = catchAsync(async (req, res) => {
-  const list = await purchaseListService.getPurchaseListById(req.params.purchaseListId);
-  if (!list) {
+  const purchaseList = await purchaseListService.getPurchaseListById(req.params.purchaseListId);
+  if (!purchaseList) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
   }
-  res.send({ list });
+  res.send({ purchaseList });
 });
 
 const updatePurchaseList = catchAsync(async (req, res) => {
@@ -35,10 +35,27 @@ const deletePurchaseList = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const addPurchaseListItem = catchAsync(async (req, res) => {
+  const { purchaseListId, listItemId } = req.params;
+  const purchaseList = await purchaseListService.getPurchaseListById(purchaseListId);
+
+  if (purchaseList.user.toString() !== req.user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+
+  const purchaseListItem = await purchaseListService.addPurchaseListItem(req.user, purchaseList, listItemId);
+  res.status(httpStatus.CREATED).send({ purchaseListItem });
+});
+
+const removePurchaseListItem = catchAsync(async (req, res) => {
+  await purchaseListService.removeListItem(req.user, req.params.listId, req.params.listItemId);
+  res.status(httpStatus.OK).send();
+});
+
 module.exports = {
   createPurchaseList,
   getPurchaseLists,
   getPurchaseList,
   updatePurchaseList,
   deletePurchaseList,
+  addPurchaseListItem,
+  removePurchaseListItem,
 };

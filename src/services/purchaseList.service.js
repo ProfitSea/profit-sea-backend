@@ -1,7 +1,7 @@
 const httpStatus = require('http-status');
 const { PurchaseList } = require('../models');
 const ApiError = require('../utils/ApiError');
-// const listItemService = require('./purchaseListItem.service');
+const purchaseListItemService = require('./purchaseListItem.service');
 
 // const { updateProductById } = require('./product.service');
 
@@ -79,10 +79,49 @@ const deletePurchaseListById = async (listId) => {
   return list;
 };
 
+/**
+ * Add product(listItem) in a list
+ * @param {Object} listBody
+ * @returns {Promise<List>}
+ */
+const addPurchaseListItem = async (user, purchaseList, listItemId) => {
+  const purchaseListItem = await purchaseListItemService.createPurchaseListItem(user, purchaseList.id, listItemId);
+
+  if (!purchaseListItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found');
+  }
+  purchaseList.purchaseListItems.unshift(purchaseListItem);
+  purchaseList.itemsCount = purchaseList.purchaseListItems.length;
+  await purchaseList.save();
+
+  return purchaseListItem;
+};
+
+/**
+ * delete product(listItem) in a list
+ * @param {Object} listItemId
+ * @returns {Promise<List>}
+ */
+const removeListItem = async (user, listId, listItemId) => {
+  const purchaseList = await PurchaseList.findOne({ _id: listId, user: user.id });
+  if (!purchaseList) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
+  }
+  await purchaselistItemService.deletePurchaseListItemById(listItemId, user.id);
+  // await purchaselistItemService.deletePurchaseListItemById(listItemId, user.id);
+
+  purchaseList.listItems = purchaseList.listItems.filter((listItem) => listItem.toString() !== listItemId.toString());
+  purchaseList.itemsCount = purchaseList.listItems.length;
+
+  await purchaseList.save();
+};
+
 module.exports = {
   createPurchaseList,
   queryLists,
   getPurchaseListById,
   updatePurchaseListById,
   deletePurchaseListById,
+  addPurchaseListItem,
+  removeListItem,
 };

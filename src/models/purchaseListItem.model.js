@@ -3,7 +3,7 @@ const { toJSON, paginate } = require('./plugins');
 
 const purchaseListItemSchema = mongoose.Schema(
   {
-    purchaselist: {
+    purchaseList: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: 'PurchaseList',
       required: true,
