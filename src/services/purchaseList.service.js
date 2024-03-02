@@ -102,17 +102,17 @@ const addPurchaseListItem = async (user, purchaseList, listItemId) => {
  * @param {Object} listItemId
  * @returns {Promise<List>}
  */
-const removeListItem = async (user, listId, listItemId) => {
-  const purchaseList = await PurchaseList.findOne({ _id: listId, user: user.id });
-  if (!purchaseList) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
-  }
-  await purchaselistItemService.deletePurchaseListItemById(listItemId, user.id);
-  // await purchaselistItemService.deletePurchaseListItemById(listItemId, user.id);
+const removePurchaseListItem = async (user, purchaseListId, purchaseListItemId) => {
+  const purchaseList = await getPurchaseListById(purchaseListId);
 
-  purchaseList.listItems = purchaseList.listItems.filter((listItem) => listItem.toString() !== listItemId.toString());
-  purchaseList.itemsCount = purchaseList.listItems.length;
+  if (!purchaseList) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
+  if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
+  await purchaseListItemService.deletePurchaseListItemById(purchaseListItemId, user.id);
+  purchaseList.purchaseListItems = purchaseList.purchaseListItems.filter(
+    (listItem) => listItem._id.toString() !== purchaseListItemId
+  );
+  purchaseList.itemsCount = purchaseList.purchaseListItems.length;
   await purchaseList.save();
 };
 
@@ -123,5 +123,5 @@ module.exports = {
   updatePurchaseListById,
   deletePurchaseListById,
   addPurchaseListItem,
-  removeListItem,
+  removePurchaseListItem,
 };

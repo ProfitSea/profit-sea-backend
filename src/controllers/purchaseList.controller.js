@@ -46,7 +46,8 @@ const addPurchaseListItem = catchAsync(async (req, res) => {
 });
 
 const removePurchaseListItem = catchAsync(async (req, res) => {
-  await purchaseListService.removeListItem(req.user, req.params.listId, req.params.listItemId);
+  const { purchaseListId, purchaseListItemId } = req.params;
+  await purchaseListService.removePurchaseListItem(req.user, purchaseListId, purchaseListItemId);
   res.status(httpStatus.OK).send();
 });
 

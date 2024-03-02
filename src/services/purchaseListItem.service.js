@@ -57,11 +57,11 @@ const createPurchaseListItem = async (user, purchaseListId, listItemId) => {
  * @returns {Promise<ListItem>}
  */
 const deletePurchaseListItemById = async (purchaseListItemId, userId) => {
-  const listItem = await PurchaseListItem.findOne({ _id: purchaseListItemId, user: userId });
-  if (!listItem) {
+  const purchaseListItem = await PurchaseListItem.findOne({ _id: purchaseListItemId, user: userId });
+  if (!purchaseListItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found');
   }
-  await listItem.remove();
+  await purchaseListItem.remove();
 };
 
 module.exports = {
