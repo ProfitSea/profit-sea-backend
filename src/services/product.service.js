@@ -30,6 +30,9 @@ const createProduct = async (productBody) => {
   });
 
   if (existingProduct) {
+    existingProduct.category = productBody.category; // Replace 'updatedCategory' with the new category value
+    // Save the changes
+    await existingProduct.save();
     return existingProduct;
   }
 
@@ -42,7 +45,7 @@ const createProduct = async (productBody) => {
   let product;
   try {
     await session.withTransaction(async () => {
-      const { prices: saleUnits, vendor, imgSrc, brand, description, productNumber, packSize } = productBody;
+      const { prices: saleUnits, vendor, imgSrc, brand, description, productNumber, packSize, category } = productBody;
 
       const productId = mongoose.Types.ObjectId();
 
@@ -73,6 +76,8 @@ const createProduct = async (productBody) => {
         description,
         productNumber,
         packSize,
+        category,
+        // normalizedDescription,
         _id: productId,
       });
       await product.save({ session });

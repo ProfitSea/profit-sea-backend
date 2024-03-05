@@ -7,6 +7,13 @@ const listItemController = require('../../controllers/lisItem.controller');
 const router = express.Router();
 
 router
+  .route('/:baseListItemId/add-comparison-product/:comparisonListItemId?')
+  .post(auth(), validate(listItemValidation.addComparisonProduct), listItemController.addComparisonProduct);
+
+router
+  .route('/:baseListItemId/remove-comparison-product/:comparisonListItemId?')
+  .post(auth(), validate(listItemValidation.removeComparisonProduct), listItemController.removeComparisonProduct);
+router
   .route('/')
   .get(auth(), validate(listItemValidation.getListItem), listItemController.getListItem)
   .patch(

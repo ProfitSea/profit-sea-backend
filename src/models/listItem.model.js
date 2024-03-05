@@ -8,6 +8,17 @@ const listItemSchema = mongoose.Schema(
       ref: 'Products',
       required: true,
     },
+    isBaseProduct: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    comparisonProducts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ListItem',
+      },
+    ],
     vendor: {
       type: String,
       required: true,
@@ -47,6 +58,19 @@ const listItemSchema = mongoose.Schema(
     isAnchored: {
       type: Boolean,
       default: false,
+    },
+    recommendation: {
+      listItemId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ListItem',
+      },
+      priceSavings: {
+        type: String,
+      },
+      reason: {
+        type: String,
+        maxlength: 300,
+      },
     },
   },
   {

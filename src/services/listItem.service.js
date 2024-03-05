@@ -28,6 +28,27 @@ const getListItemById = async (listItemId) => {
 };
 
 /**
+ * Get listItem by productNumber
+ * @param {ObjectId} listItemId
+ * @returns {Promise<ListItem>}
+ */
+const getListItemByProductNumber = async (productNumber) => {
+  return ListItem.findOne({ productNumber: productNumber }).populate([
+    {
+      path: 'product',
+    },
+    {
+      path: 'saleUnitQuantities.saleUnit',
+      model: 'ProductSaleUnit',
+    },
+    {
+      path: 'saleUnitQuantities.price',
+      model: 'Price',
+    },
+  ]);
+};
+
+/**
  * Query for lists
  * @param {Object} filter - Mongo filter
  * @param {Object} options - Query options
@@ -165,11 +186,58 @@ const updateListItemPrice = async (user, listItemId, prices) => {
 };
 
 /**
- * Update ListItem price
- * @param {ObjectId} listItemId
- * @param {Array} prices
- * @returns {Promise<Product>}
+ * Update comparison products list
+ * @param {User} user - User authenticated within the active session
+ * @param {ObjectId} baseListItemId - Base list item ID.
+ * @param {ObjectId} comparisonListItemId - Comparison list item ID.
+ * @param {boolean} isAddOperation - Add or remove element from comparison products list
+ * @returns {Promise<Array>} - A promise that resolves to an array containing updated list item and message.
  */
+const updateComparisonProduct = async (user, baseListItemId, comparisonListItemId, isAddOperation) => {
+  if (baseListItemId === comparisonListItemId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Comparison items must differ from the base product');
+  }
+  const baseListItem = await getListItemById(baseListItemId);
+  const comparisonListItem = await getListItemById(comparisonListItemId);
+  if (!baseListItem || !comparisonListItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+  if (baseListItem.user.toString() !== user.id || comparisonListItem.user.toString() !== user.id) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+  }
+  let message = '';
+  let updateQuery;
+  if (isAddOperation) {
+    updateQuery = {
+      $set: { isBaseProduct: true },
+      $addToSet: { comparisonProducts: comparisonListItemId },
+    };
+    message = 'List item added to comparison group succesfully';
+  } else {
+    updateQuery = {
+      $pull: { comparisonProducts: comparisonListItemId },
+    };
+    message = 'List item removed to comparison group succesfully';
+    if (baseListItem.comparisonProducts.length === 1) {
+      updateQuery['$set'] = { isBaseProduct: false };
+      message = 'Product group removed succesfully';
+    }
+  }
+  const updatedResult = await ListItem.findOneAndUpdate({ _id: baseListItemId }, updateQuery, { new: true });
+  if (!updatedResult) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+  return [updatedResult, message];
+};
+
+const addComparisonProduct = async (user, baseListItemId, comparisonListItemId) => {
+  return await updateComparisonProduct(user, baseListItemId, comparisonListItemId, true);
+};
+
+const removeComparisonProduct = async (user, baseListItemId, comparisonListItemId) => {
+  return await updateComparisonProduct(user, baseListItemId, comparisonListItemId, false);
+};
+
 const updateListItemPriceUsingSaleUnit = async (user, listItemId, prices) => {
   const listItem = await getListItemById(listItemId);
   if (!listItem) {
@@ -274,6 +342,12 @@ const findListItemsByProductNumber = async (user, { productNumber }) => {
   return listItems;
 };
 
+/**
+ * Update ListItem price
+ * @param {ObjectId} listItemId
+ * @param {Array} prices
+ * @returns {Promise<Product>}
+ */
 const updatePricesByProductNumber = async (user, { productNumber }, prices) => {
   const listItems = await findListItemsByProductNumber(user, { productNumber });
   if (listItems?.length <= 0) {
@@ -349,24 +423,26 @@ const toggleListItemAnchor = async (user, listItemId) => {
     _id: listItemId,
   });
 
-  if(!listItem) {
+  if (!listItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
   }
 
   listItem.isAnchored = !listItem.isAnchored;
   await listItem.save();
   return listItem;
-}
-
+};
 
 module.exports = {
   createListItem,
   queryListItems,
   getListItemById,
+  getListItemByProductNumber,
   updateListItemById,
   deleteListItemById,
   updateListItemQuantity,
   updateListItemPrice,
+  addComparisonProduct,
+  removeComparisonProduct,
   findListItemsByProductNumber,
   updatePricesByProductNumber,
   toggleListItemAnchor,

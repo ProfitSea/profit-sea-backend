@@ -29,6 +29,20 @@ const updateListItemPricesByProductNumber = {
   },
 };
 
+const addComparisonProduct = {
+  params: Joi.object().keys({
+    baseListItemId: Joi.string().custom(objectId).required(),
+    comparisonListItemId: Joi.string().custom(objectId).required(),
+  }),
+};
+
+const removeComparisonProduct = {
+  params: Joi.object().keys({
+    baseListItemId: Joi.string().custom(objectId).required(),
+    comparisonListItemId: Joi.string().custom(objectId).required(),
+  }),
+};
+
 const updateListItemQuantity = {
   body: Joi.object().keys({
     listItemId: Joi.string().custom(objectId).required(),
@@ -45,6 +59,8 @@ const updateListItemPrice = {
 };
 
 module.exports = {
+  addComparisonProduct,
+  removeComparisonProduct,
   updateListItemQuantity,
   updateListItemPrice,
   getListItem,

@@ -2,6 +2,15 @@ const httpStatus = require('http-status');
 const { List } = require('../models');
 const ApiError = require('../utils/ApiError');
 const listItemService = require('./listItem.service');
+const OpenAiService = require('./openai.service');
+
+const OpenAI = require('openai');
+const config = require('../config/config');
+const { updateProductById } = require('./product.service');
+
+const openai = new OpenAI({
+  apiKey: config.openAi.key,
+});
 
 /**
  * Create a list
@@ -74,7 +83,7 @@ const queryLists = async (filter, options) => {
  * @returns {Promise<List>}
  */
 const getListById = async (listId) => {
-  return List.findById(listId).populate({
+  return await List.findById(listId).populate({
     path: 'listItems',
     populate: [
       {
@@ -82,14 +91,128 @@ const getListById = async (listId) => {
       },
       {
         path: 'saleUnitQuantities.saleUnit',
-        model: 'ProductSaleUnit', // Replace with the correct model name for sale units
+        model: 'ProductSaleUnit',
       },
       {
         path: 'saleUnitQuantities.price',
-        model: 'Price', // Replace with the correct model name for price
+        model: 'Price',
+      },
+      {
+        path: 'comparisonProducts',
+        model: 'ListItem',
+        populate: [
+          {
+            path: 'product',
+          },
+          {
+            path: 'saleUnitQuantities.saleUnit',
+            model: 'ProductSaleUnit',
+          },
+          {
+            path: 'saleUnitQuantities.price',
+            model: 'Price',
+          },
+        ],
       },
     ],
   });
+};
+
+const formatProduct = (product) => {
+  return ` productNumber: ${product.productNumber},  ${product.brand}, ${product.vendor},  description: ${product.description}, price/unit: $${product.price}/${product.unit}, packSize/unit: ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice} `;
+};
+
+const formatProductGroup = (productGroup) => {
+  return productGroup.map(formatProduct);
+};
+
+const formatList = (list) => {
+  return list.map(formatProductGroup);
+};
+
+function extractProductInfo(item) {
+  return {
+    listItemId: item._id.toString(),
+    productId: item.product.id,
+    vendor: item.vendor,
+    brand: item.product.brand,
+    description: item.product.description,
+    productNumber: item.product.productNumber,
+    packSize: item.product.packSize,
+    totalPrice: item?.totalPrice,
+    price: item?.saleUnitQuantities[0].price?.price,
+    quantity: item?.saleUnitQuantities[0].quantity,
+    unit: item?.saleUnitQuantities[0]?.saleUnit?.unit,
+  };
+}
+
+/**
+ * Retrieve recommendations for list analysis based on the products selected for comparison
+ * @param {User} user - User authenticated within the active session
+ * @param {ObjectId} listId list ID to analyze
+ * @returns {Promise<List>}
+ */
+
+const getListAnalysis = async (user, listId) => {
+  // Retrieve the list by ID
+  const list = await getListById(listId);
+
+  if (!list) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+  if (list.user.toString() !== user.id) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+  }
+  if (!list.itemsCount) {
+    return [];
+  }
+  const groupedProducts = {};
+  for (const listItem of list.listItems) {
+    if (listItem.isBaseProduct && !listItem.isAnchored) {
+      const productId = listItem.product._id.toString();
+      if (!groupedProducts[productId]) {
+        groupedProducts[productId] = [];
+      }
+      groupedProducts[productId].push(extractProductInfo(listItem));
+      for (const comparisonListItem of listItem.comparisonProducts) {
+        groupedProducts[productId].push(extractProductInfo(comparisonListItem));
+      }
+    }
+  }
+  const groupedProductsArray = Object.values(groupedProducts);
+  if (!groupedProductsArray.length) return [];
+
+  const productInfoForRecommendationForAI = formatList(groupedProductsArray);
+  // Send recommendation requests in parallel
+  const recommendations = await Promise.all(
+    productInfoForRecommendationForAI.map(async (group) => {
+      const groupString = group.join();
+      const openAiService = new OpenAiService();
+      return await openAiService.getRecomendation(groupString);
+    })
+  );
+
+  let indexCounter = 0;
+  for (const listItem of list.listItems) {
+    if (listItem.isBaseProduct && !listItem.isAnchored) {
+      listItem.recommendation = {};
+      listItem.recommendation.priceSavings = recommendations[indexCounter]?.priceSavings;
+      listItem.recommendation.reason = recommendations[indexCounter]?.suggestionReason;
+      const listItemByProductNumber = await listItemService.getListItemByProductNumber(
+        recommendations[indexCounter]?.productNumber
+      );
+      if (listItemByProductNumber) {
+        listItem.recommendation.listItemId = listItemByProductNumber.id;
+      }
+      await listItem.save();
+      indexCounter = indexCounter + 1;
+    }
+  }
+  await list.save(); // Save the updated list
+  // Fetch updated list after saving
+  const updatedList = await getListById(listId);
+  const isBaseProductListItems = updatedList.listItems.filter((listItem) => listItem.isBaseProduct && !listItem.isAnchored);
+  return isBaseProductListItems;
 };
 
 /**
@@ -151,4 +274,5 @@ module.exports = {
   updateListName,
   addListItem,
   removeListItem,
+  getListAnalysis,
 };
