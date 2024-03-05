@@ -14,8 +14,11 @@ router
 router
   .route('/:purchaseListId')
   .get(auth(), validate(purchaseListValidation.getPurchaseList), purchaseListController.getPurchaseList)
-  .patch(auth(), validate(purchaseListValidation.updatePurchaseList), purchaseListController.updatePurchaseList)
   .delete(auth(), validate(purchaseListValidation.deleteList), purchaseListController.deletePurchaseList);
+
+router
+  .route('/:purchaseListId/name')
+  .patch(auth(), validate(purchaseListValidation.updatePurchaseListName), purchaseListController.updatePurchaseListName);
 
 router
   .route('/:purchaseListId/list-item/:listItemId')

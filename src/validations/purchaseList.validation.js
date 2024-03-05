@@ -22,7 +22,7 @@ const getPurchaseList = {
   }),
 };
 
-const updatePurchaseList = {
+const updatePurchaseListName = {
   params: Joi.object().keys({
     purchaseListId: Joi.string().custom(objectId),
   }),
@@ -57,7 +57,7 @@ module.exports = {
   createPurchaseList,
   getPurchaseLists,
   getPurchaseList,
-  updatePurchaseList,
+  updatePurchaseListName,
   deletePurchaseList,
   addPurchaseListItem,
   removePurchaseListItem,

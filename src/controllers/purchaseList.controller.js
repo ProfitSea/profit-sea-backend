@@ -25,7 +25,7 @@ const getPurchaseList = catchAsync(async (req, res) => {
   res.send({ purchaseList });
 });
 
-const updatePurchaseList = catchAsync(async (req, res) => {
+const updatePurchaseListName = catchAsync(async (req, res) => {
   const purchaseList = await purchaseListService.updatePurchaseListById(req.params.purchaseListId, req.body);
   res.send({ purchaseList });
 });
@@ -55,7 +55,7 @@ module.exports = {
   createPurchaseList,
   getPurchaseLists,
   getPurchaseList,
-  updatePurchaseList,
+  updatePurchaseListName,
   deletePurchaseList,
   addPurchaseListItem,
   removePurchaseListItem,

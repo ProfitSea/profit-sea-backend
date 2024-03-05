@@ -5,6 +5,7 @@ const productRoute = require('./product.route');
 const listRoute = require('./list.route');
 const listItemRoute = require('./listItem.route');
 const purchaseListRoute = require('./purchaseList.route');
+const purchaseListItemRoute = require('./purchaseListItem.route');
 const docsRoute = require('./docs.route');
 const config = require('../../config/config');
 
@@ -34,6 +35,10 @@ const defaultRoutes = [
   {
     path: '/purchase-lists',
     route: purchaseListRoute,
+  },
+  {
+    path: '/purchase-list-items',
+    route: purchaseListItemRoute,
   },
 ];
 
