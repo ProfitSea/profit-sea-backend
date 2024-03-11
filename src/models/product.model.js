@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 const { toJSON, paginate } = require('./plugins');
-const { vendorNameEnums } = require('../utils/enums');
 
 const productSchema = new mongoose.Schema(
   {
     vendor: {
-      type: String,
-      enum: vendorNameEnums,
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'Vendor',
       required: true,
     },
     imgSrc: {

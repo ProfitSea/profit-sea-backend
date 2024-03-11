@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 const mongoose = require('mongoose');
 const httpStatus = require('http-status');
-const { Product } = require('../models');
+const { Product, Vendor } = require('../models');
 const ApiError = require('../utils/ApiError');
 const Products = require('../models/product.model');
 const productSaleUnitService = require('./productSaleUnit.service');
@@ -44,6 +44,15 @@ const createProduct = async (productBody) => {
     await session.withTransaction(async () => {
       const { prices: saleUnits, vendor, imgSrc, brand, description, productNumber, packSize, category } = productBody;
 
+      // Create vendor record if does not exists in DB
+      const existingVendor = await Vendor.findOne({ name: vendor });
+      let vendorId = '';
+      if (!existingVendor) {
+        const newVendor = await new Vendor({ name: vendor }).save({ session });
+        vendorId = newVendor._id;
+      } else {
+        vendorId = existingVendor._id;
+      }
       const productId = mongoose.Types.ObjectId();
 
       let saleUnitsArray = saleUnits.map((su) => ({
@@ -67,14 +76,13 @@ const createProduct = async (productBody) => {
       ]);
       product = new Products({
         saleUnits: saleUnitsArray,
-        vendor,
+        vendor: vendorId,
         imgSrc,
         brand,
         description,
         productNumber,
         packSize,
         category,
-        // normalizedDescription,
         _id: productId,
       });
       await product.save({ session });

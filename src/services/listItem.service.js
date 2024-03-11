@@ -15,6 +15,9 @@ const getListItemById = async (listItemId) => {
   return ListItem.findById(listItemId).populate([
     {
       path: 'product',
+      populate: {
+        path: 'vendor',
+      },
     },
     {
       path: 'saleUnitQuantities.saleUnit',
