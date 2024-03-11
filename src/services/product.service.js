@@ -30,9 +30,6 @@ const createProduct = async (productBody) => {
   });
 
   if (existingProduct) {
-    existingProduct.category = productBody.category; // Replace 'updatedCategory' with the new category value
-    // Save the changes
-    await existingProduct.save();
     return existingProduct;
   }
 
