@@ -180,10 +180,10 @@ const getListAnalysis = async (user, listId) => {
     }
   }
   const groupedProductsArray = Object.values(groupedProducts);
-  const productInfoForRecommendationForAI = formatList(groupedProductsArray);
+  const productInfoForAiRecommendation = formatList(groupedProductsArray);
   // Send recommendation requests in parallel
   const recommendations = await Promise.all(
-    productInfoForRecommendationForAI.map(async (group) => {
+    productInfoForAiRecommendation.map(async (group) => {
       const groupString = group.join();
       const openAiService = new OpenAiService();
       return await openAiService.getRecomendation(groupString);

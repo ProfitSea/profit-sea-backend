@@ -25,7 +25,7 @@ router
   .post(auth(), validate(purchaseListValidation.addPurchaseListItem), purchaseListController.addPurchaseListItem);
 
 router
-  .route('/:purchaseListId/list-item/:purchaseListItemId')
+  .route('/:purchaseListId/list-item/:listItemId')
   .delete(auth(), validate(purchaseListValidation.removePurchaseListItem), purchaseListController.removePurchaseListItem);
 
 module.exports = router;

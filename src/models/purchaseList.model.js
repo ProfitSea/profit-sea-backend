@@ -31,6 +31,29 @@ const purchaseListSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    totalAmount: {
+      type: Number,
+      default: 0,
+      required: true,
+      min: 0,
+    },
+    priceSaving: {
+      type: Number,
+      default: 0,
+    },
+    additionalCost: [
+      {
+        vendor: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Vendor',
+          required: true,
+        },
+        additionalPrice: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

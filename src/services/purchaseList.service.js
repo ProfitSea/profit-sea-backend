@@ -1,7 +1,10 @@
 const httpStatus = require('http-status');
+const mongoose = require('mongoose');
 const { PurchaseList } = require('../models');
 const ApiError = require('../utils/ApiError');
 const purchaseListItemService = require('./purchaseListItem.service');
+const listItemService = require('./listItem.service');
+const logger = require('../config/logger');
 
 // const { updateProductById } = require('./product.service');
 
@@ -80,40 +83,75 @@ const deletePurchaseListById = async (listId) => {
 };
 
 /**
- * Add product(listItem) in a list
+ * Add product(listItem) in a purchase list
  * @param {Object} listBody
  * @returns {Promise<List>}
  */
-const addPurchaseListItem = async (user, purchaseList, listItemId) => {
-  const purchaseListItem = await purchaseListItemService.createPurchaseListItem(user, purchaseList.id, listItemId);
+const addPurchaseListItem = async (user, purchaseListId, listItemId) => {
+  const session = await mongoose.startSession();
+  const transactionOptions = {
+    readPreference: 'primary',
+    readConcern: { level: 'local' },
+    writeConcern: { w: 'majority' },
+  };
+  try {
+    await session.withTransaction(async () => {
+      const purchaseList = await getPurchaseListById(purchaseListId);
+      if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
-  if (!purchaseListItem) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found');
+      const purchaseListItem = await purchaseListItemService.createPurchaseListItem(user, purchaseList.id, listItemId);
+
+      if (!purchaseListItem) throw new ApiError(httpStatus.NOT_FOUND, 'Unable to add listItem to purchase list');
+
+      const listItem = await listItemService.getListItemById(listItemId);
+      purchaseList.totalAmount = purchaseList.totalAmount + listItem.totalPrice;
+      purchaseList.purchaseListItems.unshift(purchaseListItem);
+      purchaseList.itemsCount = purchaseList.purchaseListItems.length;
+      await purchaseList.save();
+      return purchaseListItem;
+    }, transactionOptions);
+  } catch (error) {
+    logger.error('Transaction Error: ', error);
+    throw error;
+  } finally {
+    session.endSession();
   }
-  purchaseList.purchaseListItems.unshift(purchaseListItem);
-  purchaseList.itemsCount = purchaseList.purchaseListItems.length;
-  await purchaseList.save();
-
-  return purchaseListItem;
 };
 
 /**
- * delete product(listItem) in a list
+ * delete product(listItem) in a purchase list
  * @param {Object} listItemId
  * @returns {Promise<List>}
  */
-const removePurchaseListItem = async (user, purchaseListId, purchaseListItemId) => {
-  const purchaseList = await getPurchaseListById(purchaseListId);
+const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
+  const session = await mongoose.startSession();
+  const transactionOptions = {
+    readPreference: 'primary',
+    readConcern: { level: 'local' },
+    writeConcern: { w: 'majority' },
+  };
+  try {
+    await session.withTransaction(async () => {
+      const purchaseList = await getPurchaseListById(purchaseListId);
 
-  if (!purchaseList) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
-  if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+      if (!purchaseList) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
+      if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
-  await purchaseListItemService.deletePurchaseListItemById(purchaseListItemId, user.id);
-  purchaseList.purchaseListItems = purchaseList.purchaseListItems.filter(
-    (listItem) => listItem._id.toString() !== purchaseListItemId
-  );
-  purchaseList.itemsCount = purchaseList.purchaseListItems.length;
-  await purchaseList.save();
+      const purchaseListItemId = await purchaseListItemService.removePurchaseListItemByListItemId(listItemId, user.id);
+      purchaseList.purchaseListItems = purchaseList.purchaseListItems.filter(
+        (listItem) => listItem._id.toString() !== purchaseListItemId
+      );
+      const listItem = await listItemService.getListItemById(listItemId);
+      purchaseList.totalAmount = purchaseList.totalAmount - listItem.totalPrice;
+      purchaseList.itemsCount = purchaseList.purchaseListItems.length;
+      await purchaseList.save();
+    }, transactionOptions);
+  } catch (error) {
+    logger.error('Transaction Error: ', error);
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 module.exports = {

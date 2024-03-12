@@ -37,17 +37,13 @@ const deletePurchaseList = catchAsync(async (req, res) => {
 
 const addPurchaseListItem = catchAsync(async (req, res) => {
   const { purchaseListId, listItemId } = req.params;
-  const purchaseList = await purchaseListService.getPurchaseListById(purchaseListId);
-
-  if (purchaseList.user.toString() !== req.user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
-
-  const purchaseListItem = await purchaseListService.addPurchaseListItem(req.user, purchaseList, listItemId);
+  const purchaseListItem = await purchaseListService.addPurchaseListItem(req.user, purchaseListId, listItemId);
   res.status(httpStatus.CREATED).send({ purchaseListItem });
 });
 
 const removePurchaseListItem = catchAsync(async (req, res) => {
-  const { purchaseListId, purchaseListItemId } = req.params;
-  await purchaseListService.removePurchaseListItem(req.user, purchaseListId, purchaseListItemId);
+  const { purchaseListId, listItemId } = req.params;
+  await purchaseListService.removePurchaseListItem(req.user, purchaseListId, listItemId);
   res.status(httpStatus.OK).send();
 });
 

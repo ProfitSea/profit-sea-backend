@@ -36,10 +36,11 @@ const createPurchaseListItem = async (user, purchaseListId, listItemId) => {
   const existingPurchaseListItem = await PurchaseListItem.findOne({
     user: user.id,
     purchaseList: purchaseListId,
+    listItem: listItemId,
   });
 
   if (existingPurchaseListItem) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'List item was already added to the Puchase List');
+    throw new ApiError(httpStatus.BAD_REQUEST, 'List item was already added to the Purchase List');
   }
   const purchaseListItemPayload = {
     user: user.id,
@@ -57,17 +58,19 @@ const createPurchaseListItem = async (user, purchaseListId, listItemId) => {
  * @param {ObjectId} listId
  * @returns {Promise<ListItem>}
  */
-const deletePurchaseListItemById = async (purchaseListItemId, userId) => {
-  const listItem = await PurchaseListItem.findOne({ _id: purchaseListItemId, user: userId });
-  if (!listItem) {
+const removePurchaseListItemByListItemId = async (listItemId, userId) => {
+  const purchaseListItem = await PurchaseListItem.findOne({ listItem: listItemId, user: userId });
+  if (!purchaseListItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found');
   }
-  await listItem.remove();
+  const purchaseListItemId = purchaseListItem._id;
+  await purchaseListItem.remove();
+  return purchaseListItemId.toString();
 };
 
 module.exports = {
   queryPurchaseListItems,
   getPurchaseListItemById,
   createPurchaseListItem,
-  deletePurchaseListItemById,
+  removePurchaseListItemByListItemId,
 };
