@@ -47,6 +47,11 @@ const getPurchaseListById = async (listId) => {
       {
         path: 'listItem',
         model: 'ListItem',
+        populate: [
+          {
+            path: 'comparisonProducts',
+          },
+        ],
       },
     ],
   });
@@ -104,7 +109,7 @@ const addPurchaseListItem = async (user, purchaseListId, listItemId) => {
       if (!purchaseListItem) throw new ApiError(httpStatus.NOT_FOUND, 'Unable to add listItem to purchase list');
 
       const listItem = await listItemService.getListItemById(listItemId);
-      purchaseList.totalAmount = purchaseList.totalAmount + listItem.totalPrice;
+      purchaseList.totalAmount += listItem.totalPrice;
       purchaseList.purchaseListItems.unshift(purchaseListItem);
       purchaseList.itemsCount = purchaseList.purchaseListItems.length;
       await purchaseList.save();
@@ -142,7 +147,7 @@ const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
         (listItem) => listItem._id.toString() !== purchaseListItemId
       );
       const listItem = await listItemService.getListItemById(listItemId);
-      purchaseList.totalAmount = purchaseList.totalAmount - listItem.totalPrice;
+      purchaseList.totalAmount -= listItem.totalPrice;
       purchaseList.itemsCount = purchaseList.purchaseListItems.length;
       await purchaseList.save();
     }, transactionOptions);
