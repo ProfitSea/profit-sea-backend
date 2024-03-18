@@ -90,6 +90,9 @@ const getListById = async (listId) => {
         path: 'product',
       },
       {
+        path: 'vendor',
+      },
+      {
         path: 'saleUnitQuantities.saleUnit',
         model: 'ProductSaleUnit',
       },
@@ -155,7 +158,7 @@ function extractProductInfo(item) {
 
 const getListAnalysis = async (user, listId) => {
   // Retrieve the list by ID
-  const list = await getListById(listId);
+  let list = await getListById(listId);
 
   if (!list) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
@@ -166,6 +169,15 @@ const getListAnalysis = async (user, listId) => {
   if (!list.itemsCount) {
     return [];
   }
+
+  // Update listItems with empty recommendations
+  list.listItems.forEach((item) => {
+    item.recommendation = {};
+    item.save();
+  });
+  // await list.save();
+  // list = await getListById(listId);
+
   const groupedProducts = {};
   for (const listItem of list.listItems) {
     if (listItem.isBaseProduct) {
@@ -191,8 +203,9 @@ const getListAnalysis = async (user, listId) => {
   );
 
   // Update list items with recommendations
-  const updatePromises = list.listItems.map(async (listItem, index) => {
-    if (listItem.isBaseProduct) {
+  const updatePromises = list.listItems
+    .filter((listItem) => listItem.isBaseProduct)
+    .map(async (listItem, index) => {
       listItem.recommendation = {};
       listItem.recommendation.priceSavings = recommendations[index]?.priceSavings;
       listItem.recommendation.reason = recommendations[index]?.suggestionReason;
@@ -203,11 +216,9 @@ const getListAnalysis = async (user, listId) => {
         listItem.recommendation.listItemId = listItemByProductNumber.id;
       }
       await listItem.save();
-    }
-  });
+    });
 
   await Promise.all(updatePromises); // Wait for all updates to complete
-  await list.save(); // Save the updated list
   // Fetch updated list after saving
   const updatedList = await getListById(listId);
   const isBaseProductListItems = updatedList.listItems.filter((listItem) => listItem.isBaseProduct || listItem.isAnchored);
