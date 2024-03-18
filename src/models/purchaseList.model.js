@@ -37,6 +37,11 @@ const purchaseListSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    unselectedTotalAmount: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
     priceSaving: {
       type: Number,
       default: 0,
@@ -48,7 +53,7 @@ const purchaseListSchema = new mongoose.Schema(
           ref: 'Vendor',
           required: true,
         },
-        additionalPrice: {
+        price: {
           type: Number,
           required: true,
         },

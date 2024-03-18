@@ -20,7 +20,8 @@ const listItemSchema = mongoose.Schema(
       },
     ],
     vendor: {
-      type: String,
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'Vendor',
       required: true,
     },
     user: {
