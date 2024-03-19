@@ -207,7 +207,7 @@ const getListAnalysis = async (user, listId) => {
     .filter((listItem) => listItem.isBaseProduct)
     .map(async (listItem, index) => {
       listItem.recommendation = {};
-      listItem.recommendation.priceSavings = recommendations[index]?.priceSavings;
+      listItem.recommendation.priceSaving = recommendations[index]?.priceSaving;
       listItem.recommendation.reason = recommendations[index]?.suggestionReason;
       const listItemByProductNumber = await listItemService.getListItemByProductNumber(
         recommendations[index]?.productNumber

@@ -2,6 +2,7 @@ const httpStatus = require('http-status');
 const mongoose = require('mongoose');
 const { PurchaseList } = require('../models');
 const ApiError = require('../utils/ApiError');
+const { subtractWithFixed, sumWithFixed } = require('../utils/helper');
 const purchaseListItemService = require('./purchaseListItem.service');
 const listItemService = require('./listItem.service');
 const logger = require('../config/logger');
@@ -55,10 +56,10 @@ const getPurchaseListById2 = async (listId) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase List not found');
   }
   // return purchaseList;
-  purchaseList.priceSaving = parseFloat(purchaseList.unselectedTotalAmount - purchaseList.totalAmount).toFixed(2);
+  purchaseList.priceSaving = subtractWithFixed(purchaseList.unselectedTotalAmount, purchaseList.totalAmount);
 
   purchaseList.additionalCost.forEach((vendor) => {
-    vendor.priceSaving = parseFloat(vendor.totalAmount - purchaseList.totalAmount).toFixed(2);
+    vendor.priceSaving = subtractWithFixed(vendor.totalAmount, purchaseList.totalAmount);
   });
 
   await purchaseList.save();
@@ -165,9 +166,7 @@ const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, uns
 
       if (existingSelectedVendor) {
         // If the vendor already exists, update its totalAmount and priceSaving
-        existingSelectedVendor.totalAmount = parseFloat(
-          (existingSelectedVendor.totalAmount + selectedListItem.totalPrice).toFixed(2)
-        );
+        existingSelectedVendor.totalAmount = sumWithFixed(existingSelectedVendor.totalAmount, selectedListItem.totalPrice);
         await existingSelectedVendor.save();
       } else {
         // If the vendor doesn't exist, add a new entry
@@ -178,8 +177,9 @@ const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, uns
       }
       if (existingUnselectedVendor) {
         // If the vendor already exists, update its totalAmount and priceSaving
-        existingUnselectedVendor.totalAmount = parseFloat(
-          (existingUnselectedVendor.totalAmount + unselectedListItem.totalPrice).toFixed(2)
+        existingUnselectedVendor.totalAmount = sumWithFixed(
+          existingUnselectedVendor.totalAmount,
+          unselectedListItem.totalPrice
         );
         await existingUnselectedVendor.save();
       } else {
@@ -240,11 +240,13 @@ const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
         (listItem) => listItem._id.toString() !== purchaseListItemId
       );
 
-      purchaseList.totalAmount = parseFloat((purchaseList.totalAmount - selectedListItem.totalPrice).toFixed(2));
+      purchaseList.totalAmount = subtractWithFixed(purchaseList.totalAmount, selectedListItem.totalPrice);
 
-      purchaseList.unselectedTotalAmount = parseFloat(
-        (purchaseList.unselectedTotalAmount - unselectedListItem.totalPrice).toFixed(2)
+      purchaseList.unselectedTotalAmount = subtractWithFixed(
+        purchaseList.unselectedTotalAmount,
+        unselectedListItem.totalPrice
       );
+
       purchaseList.itemsCount = purchaseList.purchaseListItems.length;
 
       // purchaseList.unselectedListItemId = unselectedListItemId;
@@ -257,8 +259,9 @@ const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
 
       if (existingSelectedVendor) {
         // If the vendor already exists, update its totalAmount and priceSaving
-        existingSelectedVendor.totalAmount = parseFloat(
-          (existingSelectedVendor.totalAmount - selectedListItem.totalPrice).toFixed(2)
+        existingSelectedVendor.totalAmount = subtractWithFixed(
+          existingSelectedVendor.totalAmount,
+          selectedListItem.totalPrice
         );
 
         await existingSelectedVendor.save();
@@ -271,8 +274,9 @@ const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
       }
       if (existingUnselectedVendor) {
         // If the vendor already exists, update its totalAmount and priceSaving
-        existingUnselectedVendor.totalAmount = parseFloat(
-          (existingUnselectedVendor.totalAmount - unselectedListItem.totalPrice).toFixed(2)
+        existingUnselectedVendor.totalAmount = subtractWithFixed(
+          existingUnselectedVendor.totalAmount,
+          unselectedListItem.totalPrice
         );
         await existingUnselectedVendor.save();
       } else {

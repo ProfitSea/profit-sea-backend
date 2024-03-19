@@ -65,7 +65,7 @@ const listItemSchema = mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ListItem',
       },
-      priceSavings: {
+      priceSaving: {
         type: String,
       },
       reason: {
