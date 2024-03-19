@@ -35,6 +35,36 @@ const queryLists = async (filter, options) => {
   return lists;
 };
 
+const getPurchaseListById2 = async (listId) => {
+  const purchaseList = await PurchaseList.findById(listId).populate({
+    path: 'purchaseListItems',
+    populate: [
+      {
+        path: 'listItem',
+        model: 'ListItem',
+        populate: [
+          {
+            path: 'comparisonProducts',
+          },
+        ],
+      },
+    ],
+  });
+
+  if (!purchaseList) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase List not found');
+  }
+  // return purchaseList;
+  purchaseList.priceSaving = parseFloat(purchaseList.unselectedTotalAmount - purchaseList.totalAmount).toFixed(2);
+
+  purchaseList.additionalCost.forEach((vendor) => {
+    vendor.priceSaving = parseFloat(vendor.totalAmount - purchaseList.totalAmount).toFixed(2);
+  });
+
+  await purchaseList.save();
+  return purchaseList;
+};
+
 /**
  * Get list by id
  * @param {ObjectId} listId
@@ -92,7 +122,7 @@ const deletePurchaseListById = async (listId) => {
  * @param {Object} listBody
  * @returns {Promise<List>}
  */
-const addPurchaseListItem = async (user, purchaseListId, listItemId) => {
+const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, unselectedListItemId) => {
   const session = await mongoose.startSession();
   const transactionOptions = {
     readPreference: 'primary',
@@ -102,17 +132,66 @@ const addPurchaseListItem = async (user, purchaseListId, listItemId) => {
   try {
     await session.withTransaction(async () => {
       const purchaseList = await getPurchaseListById(purchaseListId);
+      const selectedListItem = await listItemService.getListItemById(selectedListItemId);
+      const unselectedListItem = await listItemService.getListItemById(unselectedListItemId);
+
+      console.log({ purchaseListId });
+      console.log(purchaseList);
+      console.log('purchaseList.user.toString(): ', purchaseList.user.toString());
+      console.log('user.id: ', user.id);
       if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
-      const purchaseListItem = await purchaseListItemService.createPurchaseListItem(user, purchaseList.id, listItemId);
+      const purchaseListItem = await purchaseListItemService.createPurchaseListItem(
+        user,
+        purchaseList.id,
+        selectedListItemId,
+        unselectedListItemId
+      );
 
       if (!purchaseListItem) throw new ApiError(httpStatus.NOT_FOUND, 'Unable to add listItem to purchase list');
 
-      const listItem = await listItemService.getListItemById(listItemId);
-      purchaseList.totalAmount += listItem.totalPrice;
+      purchaseList.totalAmount += selectedListItem.totalPrice;
+      purchaseList.unselectedTotalAmount += unselectedListItem.totalPrice;
       purchaseList.purchaseListItems.unshift(purchaseListItem);
       purchaseList.itemsCount = purchaseList.purchaseListItems.length;
+
+      // purchaseList.unselectedListItemId = unselectedListItemId;
+      const existingSelectedVendor = purchaseList.additionalCost.find((vendor) =>
+        vendor.vendor.equals(selectedListItem.vendor)
+      );
+      const existingUnselectedVendor = purchaseList.additionalCost.find((vendor) =>
+        vendor.vendor.equals(unselectedListItem.vendor)
+      );
+
+      if (existingSelectedVendor) {
+        // If the vendor already exists, update its totalAmount and priceSaving
+        existingSelectedVendor.totalAmount = parseFloat(
+          (existingSelectedVendor.totalAmount + selectedListItem.totalPrice).toFixed(2)
+        );
+        await existingSelectedVendor.save();
+      } else {
+        // If the vendor doesn't exist, add a new entry
+        purchaseList.additionalCost.push({
+          vendor: selectedListItem.vendor,
+          totalAmount: selectedListItem.totalPrice,
+        });
+      }
+      if (existingUnselectedVendor) {
+        // If the vendor already exists, update its totalAmount and priceSaving
+        existingUnselectedVendor.totalAmount = parseFloat(
+          (existingUnselectedVendor.totalAmount + unselectedListItem.totalPrice).toFixed(2)
+        );
+        await existingUnselectedVendor.save();
+      } else {
+        // If the vendor doesn't exist, add a new entry
+        purchaseList.additionalCost.push({
+          vendor: unselectedListItem.vendor,
+          totalAmount: unselectedListItem.totalPrice,
+        });
+      }
+
       await purchaseList.save();
+
       return purchaseListItem;
     }, transactionOptions);
   } catch (error) {
@@ -142,13 +221,67 @@ const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
       if (!purchaseList) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
       if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
+      const selectedListItem = await listItemService.getListItemById(listItemId);
+      // const unselectedListItem = await listItemService.getListItemById(unselectedListItemId);
+      const purchaseListItem = await purchaseListItemService.getPurchaseListItemByListItemId(listItemId, user.id);
+
+      if (!purchaseListItem) throw new ApiError(httpStatus.NOT_FOUND, 'List item not found in purchase list item');
+      if (purchaseListItem.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+
+      const { unselectedListItem } = purchaseListItem;
+      // const unselectedListItem = await listItemService.getListItemById(purchaseListItem.unselectedListItem);
+
+      if (!purchaseList) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
+      if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+
       const purchaseListItemId = await purchaseListItemService.removePurchaseListItemByListItemId(listItemId, user.id);
+
       purchaseList.purchaseListItems = purchaseList.purchaseListItems.filter(
         (listItem) => listItem._id.toString() !== purchaseListItemId
       );
-      const listItem = await listItemService.getListItemById(listItemId);
-      purchaseList.totalAmount -= listItem.totalPrice;
+
+      purchaseList.totalAmount = parseFloat((purchaseList.totalAmount - selectedListItem.totalPrice).toFixed(2));
+
+      purchaseList.unselectedTotalAmount = parseFloat(
+        (purchaseList.unselectedTotalAmount - unselectedListItem.totalPrice).toFixed(2)
+      );
       purchaseList.itemsCount = purchaseList.purchaseListItems.length;
+
+      // purchaseList.unselectedListItemId = unselectedListItemId;
+      const existingSelectedVendor = purchaseList.additionalCost.find((vendor) =>
+        vendor.vendor.equals(selectedListItem.vendor)
+      );
+      const existingUnselectedVendor = purchaseList.additionalCost.find((vendor) =>
+        vendor.vendor.equals(unselectedListItem.vendor)
+      );
+
+      if (existingSelectedVendor) {
+        // If the vendor already exists, update its totalAmount and priceSaving
+        existingSelectedVendor.totalAmount = parseFloat(
+          (existingSelectedVendor.totalAmount - selectedListItem.totalPrice).toFixed(2)
+        );
+
+        await existingSelectedVendor.save();
+      } else {
+        // If the vendor doesn't exist, add a new entry
+        purchaseList.additionalCost.push({
+          vendor: selectedListItem.vendor,
+          totalAmount: selectedListItem.totalPrice,
+        });
+      }
+      if (existingUnselectedVendor) {
+        // If the vendor already exists, update its totalAmount and priceSaving
+        existingUnselectedVendor.totalAmount = parseFloat(
+          (existingUnselectedVendor.totalAmount - unselectedListItem.totalPrice).toFixed(2)
+        );
+        await existingUnselectedVendor.save();
+      } else {
+        // If the vendor doesn't exist, add a new entry
+        purchaseList.additionalCost.push({
+          vendor: unselectedListItem.vendor,
+          totalAmount: unselectedListItem.totalPrice,
+        });
+      }
       await purchaseList.save();
     }, transactionOptions);
   } catch (error) {
@@ -163,6 +296,7 @@ module.exports = {
   createPurchaseList,
   queryLists,
   getPurchaseListById,
+  getPurchaseListById2,
   updatePurchaseListById,
   deletePurchaseListById,
   addPurchaseListItem,

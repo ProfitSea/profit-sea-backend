@@ -18,7 +18,7 @@ const getPurchaseLists = catchAsync(async (req, res) => {
 });
 
 const getPurchaseList = catchAsync(async (req, res) => {
-  const purchaseList = await purchaseListService.getPurchaseListById(req.params.purchaseListId);
+  const purchaseList = await purchaseListService.getPurchaseListById2(req.params.purchaseListId);
   if (!purchaseList) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
   }
@@ -36,13 +36,20 @@ const deletePurchaseList = catchAsync(async (req, res) => {
 });
 
 const addPurchaseListItem = catchAsync(async (req, res) => {
-  const { purchaseListId, listItemId } = req.params;
-  const purchaseListItem = await purchaseListService.addPurchaseListItem(req.user, purchaseListId, listItemId);
+  const { purchaseListId } = req.params;
+  const { selectedListItemId, unselectedListItemId } = req.query;
+  const purchaseListItem = await purchaseListService.addPurchaseListItem(
+    req.user,
+    purchaseListId,
+    selectedListItemId,
+    unselectedListItemId
+  );
   res.status(httpStatus.CREATED).send({ purchaseListItem });
 });
 
 const removePurchaseListItem = catchAsync(async (req, res) => {
-  const { purchaseListId, listItemId } = req.params;
+  const { purchaseListId } = req.params;
+  const { listItemId } = req.query;
   await purchaseListService.removePurchaseListItem(req.user, purchaseListId, listItemId);
   res.status(httpStatus.OK).send();
 });

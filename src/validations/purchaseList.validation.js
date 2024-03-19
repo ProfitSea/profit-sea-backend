@@ -42,17 +42,18 @@ const deletePurchaseList = {
 const addPurchaseListItem = {
   params: Joi.object().keys({
     purchaseListId: Joi.string().custom(objectId).required(),
-    listItemId: Joi.string().custom(objectId).required(),
   }),
-  body: Joi.object().keys({
-    selectedProduct: Joi.string().custom(objectId).required(),
-    unselectedProducts: Joi.string().custom(objectId).required(),
+  query: Joi.object().keys({
+    selectedListItemId: Joi.string().custom(objectId).required(),
+    unselectedListItemId: Joi.string().custom(objectId).required(),
   }),
 };
 
 const removePurchaseListItem = {
   params: Joi.object().keys({
     purchaseListId: Joi.string().custom(objectId).required(),
+  }),
+  query: Joi.object().keys({
     listItemId: Joi.string().custom(objectId).required(),
   }),
 };

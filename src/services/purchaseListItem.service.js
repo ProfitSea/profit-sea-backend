@@ -32,7 +32,7 @@ const getPurchaseListItemById = async (purchaseListItemId) => {
  * @param {ObjectId} listId
  * @returns {Promise<ListItem>}
  */
-const createPurchaseListItem = async (user, purchaseListId, listItemId) => {
+const createPurchaseListItem = async (user, purchaseListId, listItemId, unselectedListItemId) => {
   const existingPurchaseListItem = await PurchaseListItem.findOne({
     user: user.id,
     purchaseList: purchaseListId,
@@ -47,10 +47,22 @@ const createPurchaseListItem = async (user, purchaseListId, listItemId) => {
     purchaseList: purchaseListId,
     listItem: listItemId,
     priceAtOrder: [],
+    unselectedListItem: unselectedListItemId,
   };
   const purchaseListItem = new PurchaseListItem(purchaseListItemPayload);
   await purchaseListItem.save();
   return purchaseListItem;
+};
+
+/**
+ * Get purchse list item by id
+ * @param {ObjectId} listId
+ * @returns {Promise<List>}
+ */
+const getPurchaseListItemByListItemId = async (listItemId, userId) => {
+  return PurchaseListItem.findOne({ listItem: listItemId, user: userId }).populate({
+    path: 'unselectedListItem',
+  });
 };
 
 /**
@@ -72,5 +84,6 @@ module.exports = {
   queryPurchaseListItems,
   getPurchaseListItemById,
   createPurchaseListItem,
+  getPurchaseListItemByListItemId,
   removePurchaseListItemByListItemId,
 };

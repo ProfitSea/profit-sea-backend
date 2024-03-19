@@ -18,6 +18,11 @@ const purchaseListItemSchema = mongoose.Schema(
       ref: 'ListItem',
       required: true,
     },
+    unselectedListItem: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'ListItem',
+      required: true,
+    },
     priceAtOrder: {
       type: [
         {
