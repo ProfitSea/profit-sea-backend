@@ -36,7 +36,7 @@ const queryLists = async (filter, options) => {
   return lists;
 };
 
-const getPurchaseListById2 = async (listId) => {
+const getPurchaseListWithPriceSaving = async (listId) => {
   const purchaseList = await PurchaseList.findById(listId).populate({
     path: 'purchaseListItems',
     populate: [
@@ -151,8 +151,8 @@ const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, uns
 
       if (!purchaseListItem) throw new ApiError(httpStatus.NOT_FOUND, 'Unable to add listItem to purchase list');
 
-      purchaseList.totalAmount += selectedListItem.totalPrice;
-      purchaseList.unselectedTotalAmount += unselectedListItem.totalPrice;
+      purchaseList.totalAmount = sumWithFixed(purchaseList.totalAmount, selectedListItem.totalPrice);
+      purchaseList.unselectedTotalAmount = sumWithFixed(purchaseList.unselectedTotalAmount, unselectedListItem.totalPrice);
       purchaseList.purchaseListItems.unshift(purchaseListItem);
       purchaseList.itemsCount = purchaseList.purchaseListItems.length;
 
@@ -300,7 +300,7 @@ module.exports = {
   createPurchaseList,
   queryLists,
   getPurchaseListById,
-  getPurchaseListById2,
+  getPurchaseListWithPriceSaving,
   updatePurchaseListById,
   deletePurchaseListById,
   addPurchaseListItem,
