@@ -136,10 +136,6 @@ const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, uns
       const selectedListItem = await listItemService.getListItemById(selectedListItemId);
       const unselectedListItem = await listItemService.getListItemById(unselectedListItemId);
 
-      console.log({ purchaseListId });
-      console.log(purchaseList);
-      console.log('purchaseList.user.toString(): ', purchaseList.user.toString());
-      console.log('user.id: ', user.id);
       if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
       const purchaseListItem = await purchaseListItemService.createPurchaseListItem(

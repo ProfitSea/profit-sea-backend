@@ -28,33 +28,6 @@ const getPurchaseListItemById = async (purchaseListItemId) => {
 };
 
 /**
- * Create purchase list item
- * @param {ObjectId} listId
- * @returns {Promise<ListItem>}
- */
-const createPurchaseListItem = async (user, purchaseListId, listItemId, unselectedListItemId) => {
-  const existingPurchaseListItem = await PurchaseListItem.findOne({
-    user: user.id,
-    purchaseList: purchaseListId,
-    listItem: listItemId,
-  });
-
-  if (existingPurchaseListItem) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'List item was already added to the Purchase List');
-  }
-  const purchaseListItemPayload = {
-    user: user.id,
-    purchaseList: purchaseListId,
-    listItem: listItemId,
-    priceAtOrder: [],
-    unselectedListItem: unselectedListItemId,
-  };
-  const purchaseListItem = new PurchaseListItem(purchaseListItemPayload);
-  await purchaseListItem.save();
-  return purchaseListItem;
-};
-
-/**
  * Get purchse list item by id
  * @param {ObjectId} listId
  * @returns {Promise<List>}
@@ -63,6 +36,47 @@ const getPurchaseListItemByListItemId = async (listItemId, userId) => {
   return PurchaseListItem.findOne({ listItem: listItemId, user: userId }).populate({
     path: 'unselectedListItem',
   });
+};
+
+/**
+ * Create purchase list item
+ * @param {ObjectId} listId
+ * @returns {Promise<ListItem>}
+ */
+const createPurchaseListItem = async (user, purchaseListId, selectedListItemId, unselectedListItemId) => {
+  const existingPurchaseListItem = await PurchaseListItem.findOne({
+    user: user.id,
+    purchaseList: purchaseListId,
+    listItem: selectedListItemId,
+  });
+
+  if (existingPurchaseListItem) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'List item was already added to the Purchase List');
+  }
+
+  const unselectedExistingPurchaseListItem = await PurchaseListItem.findOne({
+    user: user.id,
+    purchaseList: purchaseListId,
+    listItem: unselectedListItemId,
+  });
+
+  if (unselectedExistingPurchaseListItem) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'This product was already unselected therefore cannot be added to the Purchase List'
+    );
+  }
+
+  const purchaseListItemPayload = {
+    user: user.id,
+    purchaseList: purchaseListId,
+    listItem: selectedListItemId,
+    priceAtOrder: [],
+    unselectedListItem: unselectedListItemId,
+  };
+  const purchaseListItem = new PurchaseListItem(purchaseListItemPayload);
+  await purchaseListItem.save();
+  return purchaseListItem;
 };
 
 /**
