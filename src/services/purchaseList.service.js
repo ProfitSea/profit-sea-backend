@@ -118,18 +118,35 @@ const deletePurchaseListById = async (listId) => {
   return list;
 };
 
+// Utility function for starting a session with transaction options
+const startTransactionSession = async () => {
+  const session = await mongoose.startSession();
+  return {
+    session,
+    transactionOptions: { readPreference: 'primary', readConcern: { level: 'local' }, writeConcern: { w: 'majority' } },
+  };
+};
+
+// Utility function to update additional costs in a purchase list
+const updateAdditionalCosts = async (purchaseList, listItem, amount) => {
+  const existingVendor = purchaseList.additionalCost.find((vendor) => vendor.vendor.equals(listItem.vendor));
+
+  if (existingVendor) {
+    existingVendor.totalAmount = sumWithFixed(existingVendor.totalAmount, amount);
+    await existingVendor.save();
+  } else {
+    purchaseList.additionalCost.push({ vendor: listItem.vendor, totalAmount: amount });
+  }
+};
+
 /**
  * Add product(listItem) in a purchase list
  * @param {Object} listBody
  * @returns {Promise<List>}
  */
 const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, unselectedListItemId) => {
-  const session = await mongoose.startSession();
-  const transactionOptions = {
-    readPreference: 'primary',
-    readConcern: { level: 'local' },
-    writeConcern: { w: 'majority' },
-  };
+  const { session, transactionOptions } = await startTransactionSession();
+
   try {
     await session.withTransaction(async () => {
       const purchaseList = await getPurchaseListById(purchaseListId);
@@ -152,39 +169,8 @@ const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, uns
       purchaseList.purchaseListItems.unshift(purchaseListItem);
       purchaseList.itemsCount = purchaseList.purchaseListItems.length;
 
-      // purchaseList.unselectedListItemId = unselectedListItemId;
-      const existingSelectedVendor = purchaseList.additionalCost.find((vendor) =>
-        vendor.vendor.equals(selectedListItem.vendor)
-      );
-      const existingUnselectedVendor = purchaseList.additionalCost.find((vendor) =>
-        vendor.vendor.equals(unselectedListItem.vendor)
-      );
-
-      if (existingSelectedVendor) {
-        // If the vendor already exists, update its totalAmount and priceSaving
-        existingSelectedVendor.totalAmount = sumWithFixed(existingSelectedVendor.totalAmount, selectedListItem.totalPrice);
-        await existingSelectedVendor.save();
-      } else {
-        // If the vendor doesn't exist, add a new entry
-        purchaseList.additionalCost.push({
-          vendor: selectedListItem.vendor,
-          totalAmount: selectedListItem.totalPrice,
-        });
-      }
-      if (existingUnselectedVendor) {
-        // If the vendor already exists, update its totalAmount and priceSaving
-        existingUnselectedVendor.totalAmount = sumWithFixed(
-          existingUnselectedVendor.totalAmount,
-          unselectedListItem.totalPrice
-        );
-        await existingUnselectedVendor.save();
-      } else {
-        // If the vendor doesn't exist, add a new entry
-        purchaseList.additionalCost.push({
-          vendor: unselectedListItem.vendor,
-          totalAmount: unselectedListItem.totalPrice,
-        });
-      }
+      await updateAdditionalCosts(purchaseList, selectedListItem, selectedListItem.totalPrice);
+      await updateAdditionalCosts(purchaseList, unselectedListItem, unselectedListItem.totalPrice);
 
       await purchaseList.save();
 
@@ -203,13 +189,11 @@ const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, uns
  * @param {Object} listItemId
  * @returns {Promise<List>}
  */
+
+// Refactored removePurchaseListItem function
 const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
-  const session = await mongoose.startSession();
-  const transactionOptions = {
-    readPreference: 'primary',
-    readConcern: { level: 'local' },
-    writeConcern: { w: 'majority' },
-  };
+  const { session, transactionOptions } = await startTransactionSession();
+
   try {
     await session.withTransaction(async () => {
       const purchaseList = await getPurchaseListById(purchaseListId);
@@ -218,70 +202,27 @@ const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
       if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
       const selectedListItem = await listItemService.getListItemById(listItemId);
-      // const unselectedListItem = await listItemService.getListItemById(unselectedListItemId);
       const purchaseListItem = await purchaseListItemService.getPurchaseListItemByListItemId(listItemId, user.id);
 
       if (!purchaseListItem) throw new ApiError(httpStatus.NOT_FOUND, 'List item not found in purchase list item');
       if (purchaseListItem.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
       const { unselectedListItem } = purchaseListItem;
-      // const unselectedListItem = await listItemService.getListItemById(purchaseListItem.unselectedListItem);
-
-      if (!purchaseList) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
-      if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
-
       const purchaseListItemId = await purchaseListItemService.removePurchaseListItemByListItemId(listItemId, user.id);
-
       purchaseList.purchaseListItems = purchaseList.purchaseListItems.filter(
         (listItem) => listItem._id.toString() !== purchaseListItemId
       );
-
       purchaseList.totalAmount = subtractWithFixed(purchaseList.totalAmount, selectedListItem.totalPrice);
 
       purchaseList.unselectedTotalAmount = subtractWithFixed(
         purchaseList.unselectedTotalAmount,
         unselectedListItem.totalPrice
       );
-
       purchaseList.itemsCount = purchaseList.purchaseListItems.length;
 
-      // purchaseList.unselectedListItemId = unselectedListItemId;
-      const existingSelectedVendor = purchaseList.additionalCost.find((vendor) =>
-        vendor.vendor.equals(selectedListItem.vendor)
-      );
-      const existingUnselectedVendor = purchaseList.additionalCost.find((vendor) =>
-        vendor.vendor.equals(unselectedListItem.vendor)
-      );
+      await updateAdditionalCosts(purchaseList, selectedListItem, -selectedListItem.totalPrice);
+      await updateAdditionalCosts(purchaseList, unselectedListItem, -unselectedListItem.totalPrice);
 
-      if (existingSelectedVendor) {
-        // If the vendor already exists, update its totalAmount and priceSaving
-        existingSelectedVendor.totalAmount = subtractWithFixed(
-          existingSelectedVendor.totalAmount,
-          selectedListItem.totalPrice
-        );
-
-        await existingSelectedVendor.save();
-      } else {
-        // If the vendor doesn't exist, add a new entry
-        purchaseList.additionalCost.push({
-          vendor: selectedListItem.vendor,
-          totalAmount: selectedListItem.totalPrice,
-        });
-      }
-      if (existingUnselectedVendor) {
-        // If the vendor already exists, update its totalAmount and priceSaving
-        existingUnselectedVendor.totalAmount = subtractWithFixed(
-          existingUnselectedVendor.totalAmount,
-          unselectedListItem.totalPrice
-        );
-        await existingUnselectedVendor.save();
-      } else {
-        // If the vendor doesn't exist, add a new entry
-        purchaseList.additionalCost.push({
-          vendor: unselectedListItem.vendor,
-          totalAmount: unselectedListItem.totalPrice,
-        });
-      }
       await purchaseList.save();
     }, transactionOptions);
   } catch (error) {
