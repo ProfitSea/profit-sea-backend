@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const { PurchaseListItem } = require('../models');
 const ApiError = require('../utils/ApiError');
+const listItemService = require('./listItem.service');
 
 /**
  * Query for purchase list items
@@ -22,9 +23,18 @@ const queryPurchaseListItems = async (filter, options) => {
  * @returns {Promise<List>}
  */
 const getPurchaseListItemById = async (purchaseListItemId) => {
-  return PurchaseListItem.findById(purchaseListItemId).populate({
-    path: 'user',
-  });
+  return PurchaseListItem.findById(purchaseListItemId)
+    .populate({
+      path: 'user',
+    })
+    .populate({
+      path: 'priceAtOrder.saleUnit',
+      model: 'ProductSaleUnit',
+    })
+    .populate({
+      path: 'priceAtOrder.price',
+      model: 'Price',
+    });
 };
 
 /**
@@ -67,11 +77,12 @@ const createPurchaseListItem = async (user, purchaseListId, selectedListItemId, 
     );
   }
 
+  const listItem = await listItemService.getListItemById(selectedListItemId);
   const purchaseListItemPayload = {
     user: user.id,
     purchaseList: purchaseListId,
     listItem: selectedListItemId,
-    priceAtOrder: [],
+    priceAtOrder: listItem.saleUnitQuantities,
     unselectedListItem: unselectedListItemId,
   };
   const purchaseListItem = new PurchaseListItem(purchaseListItemPayload);
