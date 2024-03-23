@@ -88,6 +88,11 @@ const getListById = async (listId) => {
     populate: [
       {
         path: 'product',
+        populate: [
+          {
+            path: 'vendor',
+          },
+        ],
       },
       {
         path: 'vendor',
@@ -106,6 +111,14 @@ const getListById = async (listId) => {
         populate: [
           {
             path: 'product',
+            populate: [
+              {
+                path: 'vendor',
+              },
+            ],
+          },
+          {
+            path: 'vendor',
           },
           {
             path: 'saleUnitQuantities.saleUnit',

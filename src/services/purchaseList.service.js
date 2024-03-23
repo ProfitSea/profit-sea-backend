@@ -7,8 +7,6 @@ const purchaseListItemService = require('./purchaseListItem.service');
 const listItemService = require('./listItem.service');
 const logger = require('../config/logger');
 
-// const { updateProductById } = require('./product.service');
-
 /**
  * Create a purchase list
  * @param {Object} listBody
