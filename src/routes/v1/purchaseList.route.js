@@ -12,7 +12,7 @@ router
   .get(auth(), validate(purchaseListValidation.getPurchaseLists), purchaseListController.getPurchaseLists);
 
 router
-  .route('/:purchaseListId')
+  .route('/:purchaseListItemId')
   .delete(auth(), validate(purchaseListValidation.removePurchaseListItem), purchaseListController.removePurchaseListItem);
 
 router

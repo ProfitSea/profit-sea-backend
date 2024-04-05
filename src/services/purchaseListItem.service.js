@@ -34,18 +34,10 @@ const getPurchaseListItemById = async (purchaseListItemId) => {
     .populate({
       path: 'priceAtOrder.price',
       model: 'Price',
+    })
+    .populate({
+      path: 'unselectedListItem',
     });
-};
-
-/**
- * Get purchse list item by id
- * @param {ObjectId} listId
- * @returns {Promise<List>}
- */
-const getPurchaseListItemByListItemId = async (listItemId, userId) => {
-  return PurchaseListItem.findOne({ listItem: listItemId, user: userId }).populate({
-    path: 'unselectedListItem',
-  });
 };
 
 /**
@@ -95,20 +87,17 @@ const createPurchaseListItem = async (user, purchaseListId, selectedListItemId, 
  * @param {ObjectId} listId
  * @returns {Promise<ListItem>}
  */
-const removePurchaseListItemByListItemId = async (listItemId, userId) => {
-  const purchaseListItem = await PurchaseListItem.findOne({ listItem: listItemId, user: userId });
+const removePurchaseListItemById = async (purchaseListItemId) => {
+  const purchaseListItem = await PurchaseListItem.findById(purchaseListItemId);
   if (!purchaseListItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found');
   }
-  const purchaseListItemId = purchaseListItem._id;
   await purchaseListItem.remove();
-  return purchaseListItemId.toString();
 };
 
 module.exports = {
   queryPurchaseListItems,
   getPurchaseListItemById,
   createPurchaseListItem,
-  getPurchaseListItemByListItemId,
-  removePurchaseListItemByListItemId,
+  removePurchaseListItemById,
 };

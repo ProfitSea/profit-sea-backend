@@ -188,25 +188,25 @@ const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, uns
  * @returns {Promise<List>}
  */
 
-// Refactored removePurchaseListItem function
-const removePurchaseListItem = async (user, purchaseListId, listItemId) => {
+const removePurchaseListItem = async (user, purchaseListItemId) => {
   const { session, transactionOptions } = await startTransactionSession();
 
   try {
     await session.withTransaction(async () => {
-      const purchaseList = await getPurchaseListById(purchaseListId);
+      const purchaseListItem = await purchaseListItemService.getPurchaseListItemById(purchaseListItemId);
+      if (!purchaseListItem) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found');
+
+      const purchaseList = await getPurchaseListById(purchaseListItem.purchaseList);
 
       if (!purchaseList) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
-      if (purchaseList.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
-      const selectedListItem = await listItemService.getListItemById(listItemId);
-      const purchaseListItem = await purchaseListItemService.getPurchaseListItemByListItemId(listItemId, user.id);
+      if (purchaseListItem.user._id.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
+      const selectedListItem = await listItemService.getListItemById(purchaseListItem.listItem);
       if (!purchaseListItem) throw new ApiError(httpStatus.NOT_FOUND, 'List item not found in purchase list item');
-      if (purchaseListItem.user.toString() !== user.id) throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
 
       const { unselectedListItem } = purchaseListItem;
-      const purchaseListItemId = await purchaseListItemService.removePurchaseListItemByListItemId(listItemId, user.id);
+      await purchaseListItemService.removePurchaseListItemById(purchaseListItemId);
       purchaseList.purchaseListItems = purchaseList.purchaseListItems.filter(
         (listItem) => listItem._id.toString() !== purchaseListItemId
       );
