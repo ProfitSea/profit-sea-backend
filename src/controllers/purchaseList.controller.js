@@ -4,12 +4,6 @@ const { purchaseListService } = require('../services');
 const pick = require('../utils/pick');
 const ApiError = require('../utils/ApiError');
 
-const createPurchaseList = catchAsync(async (req, res) => {
-  const { name, listId } = req.body;
-  const purchaseList = await purchaseListService.createPurchaseList(req.user, name, listId);
-  res.status(httpStatus.CREATED).send({ purchaseList });
-});
-
 const getPurchaseLists = catchAsync(async (req, res) => {
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
@@ -18,7 +12,7 @@ const getPurchaseLists = catchAsync(async (req, res) => {
 });
 
 const getPurchaseList = catchAsync(async (req, res) => {
-  const purchaseList = await purchaseListService.getPurchaseListWithPriceSaving(req.params.purchaseListId);
+  const purchaseList = await purchaseListService.getPurchaseListWithPriceSaving(req.user, req.params.listId);
   if (!purchaseList) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
   }
@@ -54,7 +48,6 @@ const removePurchaseListItem = catchAsync(async (req, res) => {
 });
 
 module.exports = {
-  createPurchaseList,
   getPurchaseLists,
   getPurchaseList,
   updatePurchaseListName,

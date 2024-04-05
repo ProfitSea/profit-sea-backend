@@ -1,13 +1,6 @@
 const Joi = require('joi');
 const { objectId } = require('./custom.validation');
 
-const createPurchaseList = {
-  body: Joi.object().keys({
-    name: Joi.string(),
-    listId: Joi.string().custom(objectId),
-  }),
-};
-
 const getPurchaseLists = {
   query: Joi.object().keys({
     sortBy: Joi.string().allow('').allow(null),
@@ -18,7 +11,7 @@ const getPurchaseLists = {
 
 const getPurchaseList = {
   params: Joi.object().keys({
-    purchaseListId: Joi.string().custom(objectId),
+    listId: Joi.string().custom(objectId),
   }),
 };
 
@@ -56,7 +49,6 @@ const removePurchaseListItem = {
 };
 
 module.exports = {
-  createPurchaseList,
   getPurchaseLists,
   getPurchaseList,
   updatePurchaseListName,

@@ -7,17 +7,15 @@ const purchaseListController = require('../../controllers/purchaseList.controlle
 const router = express.Router();
 
 router
-  .route('/')
-  .post(auth(), validate(purchaseListValidation.createPurchaseList), purchaseListController.createPurchaseList)
-  .get(auth(), validate(purchaseListValidation.getPurchaseLists), purchaseListController.getPurchaseLists);
-
-router
   .route('/:purchaseListItemId')
   .delete(auth(), validate(purchaseListValidation.removePurchaseListItem), purchaseListController.removePurchaseListItem);
 
 router
+  .route('/:listId')
+  .get(auth(), validate(purchaseListValidation.getPurchaseList), purchaseListController.getPurchaseList);
+
+router
   .route('/:purchaseListId')
-  .get(auth(), validate(purchaseListValidation.getPurchaseList), purchaseListController.getPurchaseList)
   .post(auth(), validate(purchaseListValidation.addPurchaseListItem), purchaseListController.addPurchaseListItem)
   .delete(auth(), validate(purchaseListValidation.deleteList), purchaseListController.deletePurchaseList);
 

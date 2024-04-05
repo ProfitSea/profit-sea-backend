@@ -6,19 +6,7 @@ const { subtractWithFixed, sumWithFixed } = require('../utils/helper');
 const purchaseListItemService = require('./purchaseListItem.service');
 const listItemService = require('./listItem.service');
 const logger = require('../config/logger');
-
-/**
- * Create a purchase list
- * @param {Object} listBody
- * @returns {Promise<List>}
- */
-const createPurchaseList = async (user, name, listId) => {
-  return PurchaseList.create({
-    name,
-    user: user.id,
-    list: listId,
-  });
-};
+const { listService } = require('../services');
 
 /**
  * Query for purchase lists
@@ -34,8 +22,10 @@ const queryLists = async (filter, options) => {
   return lists;
 };
 
-const getPurchaseListWithPriceSaving = async (listId) => {
-  const purchaseList = await PurchaseList.findById(listId).populate({
+const getPurchaseListWithPriceSaving = async (user, listId) => {
+  const listObjectId = mongoose.Types.ObjectId(listId);
+
+  let purchaseList = await PurchaseList.findOne({ list: listObjectId }).populate({
     path: 'purchaseListItems',
     populate: [
       {
@@ -49,6 +39,18 @@ const getPurchaseListWithPriceSaving = async (listId) => {
       },
     ],
   });
+  if (!purchaseList) {
+    const list = await listService.getListById(listId);
+    if (!list) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
+    }
+    // create a purchase list
+    purchaseList = await PurchaseList.create({
+      name: list.name,
+      user: user.id,
+      list: listId,
+    });
+  }
 
   if (!purchaseList) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase List not found');
@@ -148,6 +150,9 @@ const addPurchaseListItem = async (user, purchaseListId, selectedListItemId, uns
   try {
     await session.withTransaction(async () => {
       const purchaseList = await getPurchaseListById(purchaseListId);
+
+      if (!purchaseList) throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
+
       const selectedListItem = await listItemService.getListItemById(selectedListItemId);
       const unselectedListItem = await listItemService.getListItemById(unselectedListItemId);
 
@@ -232,7 +237,6 @@ const removePurchaseListItem = async (user, purchaseListItemId) => {
 };
 
 module.exports = {
-  createPurchaseList,
   queryLists,
   getPurchaseListById,
   getPurchaseListWithPriceSaving,
