@@ -133,7 +133,6 @@ const updateAdditionalCosts = async (purchaseList, listItem, amount) => {
 
   if (existingVendor) {
     existingVendor.totalAmount = sumWithFixed(existingVendor.totalAmount, amount);
-    await existingVendor.save();
   } else {
     purchaseList.additionalCost.push({ vendor: listItem.vendor, totalAmount: amount });
   }

@@ -183,14 +183,6 @@ const getListAnalysis = async (user, listId) => {
     return [];
   }
 
-  // Update listItems with empty recommendations
-  list.listItems.forEach((item) => {
-    item.recommendation = {};
-    item.save();
-  });
-  // await list.save();
-  // list = await getListById(listId);
-
   const groupedProducts = {};
   for (const listItem of list.listItems) {
     if (listItem.isBaseProduct) {
