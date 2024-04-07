@@ -42,7 +42,7 @@ const createProduct = async (productBody) => {
   let product;
   try {
     await session.withTransaction(async () => {
-      const { prices: saleUnits, vendor, imgSrc, brand, description, productNumber, packSize, category } = productBody;
+      const { prices: saleUnits, vendor, imgSrc, brand, description, productNumber, packSize, category, url } = productBody;
 
       // Create vendor record if does not exists in DB
       const existingVendor = await Vendor.findOne({ name: vendor });
@@ -83,6 +83,7 @@ const createProduct = async (productBody) => {
         productNumber,
         packSize,
         category,
+        url,
         _id: productId,
       });
       await product.save({ session });
