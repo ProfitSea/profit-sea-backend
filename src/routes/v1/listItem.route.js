@@ -28,6 +28,10 @@ router
   .patch(auth(), validate(listItemValidation.toggleListItemAnchor), listItemController.toggleListItemAnchor);
 
 router
+  .route('/toggle-isSelected/:id')
+  .get(auth(), validate(listItemValidation.toggleListItemIsSelected), listItemController.toggleListItemIsSelected);
+
+router
   .route('/quantity')
   .patch(auth(), validate(listItemValidation.updateListItemQuantity), listItemController.updateListItemQuantity);
 

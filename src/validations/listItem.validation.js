@@ -20,6 +20,15 @@ const toggleListItemAnchor = {
   }),
 };
 
+const toggleListItemIsSelected = {
+  params: Joi.object().keys({
+    id: Joi.string().custom(objectId).required(),
+  }),
+  query: Joi.object().keys({
+    baseListItemId: Joi.string().custom(objectId).required(),
+  }),
+};
+
 const updateListItemPricesByProductNumber = {
   query: {
     productNumber: Joi.string().required(),
@@ -67,4 +76,5 @@ module.exports = {
   updateListItemPricesByProductNumber,
   getListItemById,
   toggleListItemAnchor,
+  toggleListItemIsSelected,
 };

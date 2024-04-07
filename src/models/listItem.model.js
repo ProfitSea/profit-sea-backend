@@ -60,6 +60,10 @@ const listItemSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isSelected: {
+      type: Boolean,
+      default: false,
+    },
     recommendation: {
       listItemId: {
         type: mongoose.Schema.Types.ObjectId,
