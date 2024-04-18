@@ -134,8 +134,9 @@ const getListById = async (listId) => {
   });
 };
 
+// TODO: update this: remove productNumber, brand and add listItem id
 const formatProduct = (product) => {
-  return ` productNumber: ${product.productNumber},  ${product.brand}, ${product.vendor},  description: ${product.description}, price/unit: $${product.price}/${product.unit}, packSize/unit: ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice} `;
+  return `productId: ${product.productId}, vendor: ${product.vendor.name},  description: ${product.description}, price/unit: $${product.price}/${product.unit}, packSize/unit: ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice} `;
 };
 
 const formatProductGroup = (productGroup) => {
@@ -196,18 +197,31 @@ const getListAnalysis = async (user, listId) => {
       }
     }
   }
+
+  console.log('======================groupedProducts+++');
+  console.log(groupedProducts);
+  console.log('======================');
   const groupedProductsArray = Object.values(groupedProducts);
   if (!groupedProductsArray.length) return [];
   const productInfoForAiRecommendation = formatList(groupedProductsArray);
+
+  console.log({ productInfoForAiRecommendation });
   // Send recommendation requests in parallel
   const recommendations = await Promise.all(
     productInfoForAiRecommendation.map(async (group) => {
       const groupString = group.join();
+
+      console.log({ groupString });
       const openAiService = new OpenAiService();
       return await openAiService.getRecomendation(groupString);
     })
   );
 
+  console.log({ groupedProductsArray });
+
+  console.log('');
+  console.log('');
+  console.log('');
   // Update list items with recommendations
   const updatePromises = list.listItems
     .filter((listItem) => listItem.isBaseProduct)
@@ -215,12 +229,13 @@ const getListAnalysis = async (user, listId) => {
       listItem.recommendation = {};
       listItem.recommendation.priceSaving = recommendations[index]?.priceSaving;
       listItem.recommendation.reason = recommendations[index]?.suggestionReason;
-      const listItemByProductNumber = await listItemService.getListItemByProductNumber(
-        recommendations[indexCounter]?.productNumber
-      );
-      if (listItemByProductNumber) {
-        listItem.recommendation.listItemId = listItemByProductNumber.id;
-      }
+      console.log('recommendations[index]? productId papa: ', index);
+      console.log(recommendations[index]?.productId);
+      const listItemById = await listItemService.getListItemByProductId(recommendations[index]?.productId);
+      console.log(' listItemById by id }!------ renovado');
+      console.log({ listItemById });
+      console.log('');
+      listItem.recommendation.listItemId = listItemById.id;
       await listItem.save();
     });
 

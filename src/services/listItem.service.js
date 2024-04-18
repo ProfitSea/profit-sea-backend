@@ -31,12 +31,12 @@ const getListItemById = async (listItemId) => {
 };
 
 /**
- * Get listItem by productNumber
+ * Get listItem by productId
  * @param {ObjectId} listItemId
  * @returns {Promise<ListItem>}
  */
-const getListItemByProductNumber = async (productNumber) => {
-  return ListItem.findOne({ productNumber: productNumber }).populate([
+const getListItemByProductId = async (productId) => {
+  return ListItem.findOne({ product: productId }).populate([
     {
       path: 'product',
     },
@@ -492,7 +492,7 @@ module.exports = {
   createListItem,
   queryListItems,
   getListItemById,
-  getListItemByProductNumber,
+  getListItemByProductId,
   updateListItemById,
   deleteListItemById,
   updateListItemQuantity,
