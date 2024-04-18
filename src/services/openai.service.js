@@ -10,9 +10,6 @@ class OpenAiService {
 
   async getRecomendation(productsInfo) {
     console.log('');
-    console.log('GET RECOMMENDATION');
-    console.log('=== ==============');
-    console.log({ productsInfo });
     const recommendation = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [

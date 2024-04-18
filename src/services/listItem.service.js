@@ -35,8 +35,8 @@ const getListItemById = async (listItemId) => {
  * @param {ObjectId} listItemId
  * @returns {Promise<ListItem>}
  */
-const getListItemByProductId = async (productId) => {
-  return ListItem.findOne({ product: productId }).populate([
+const getListItemByProductId = async (productId, listId) => {
+  return ListItem.findOne({ product: productId, list: listId }).populate([
     {
       path: 'product',
     },
