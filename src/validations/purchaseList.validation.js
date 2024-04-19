@@ -9,6 +9,12 @@ const getPurchaseLists = {
   }),
 };
 
+const upsertPurchaseList = {
+  query: Joi.object().keys({
+    listId: Joi.string().custom(objectId),
+  }),
+};
+
 const getPurchaseList = {
   params: Joi.object().keys({
     listId: Joi.string().custom(objectId),
@@ -55,4 +61,5 @@ module.exports = {
   deletePurchaseList,
   addPurchaseListItem,
   removePurchaseListItem,
+  upsertPurchaseList,
 };

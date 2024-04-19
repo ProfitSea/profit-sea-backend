@@ -6,7 +6,7 @@ const { subtractWithFixed, sumWithFixed } = require('../utils/helper');
 const purchaseListItemService = require('./purchaseListItem.service');
 const listItemService = require('./listItem.service');
 const logger = require('../config/logger');
-const { listService } = require('../services');
+const { listService } = require('./index');
 
 /**
  * Query for purchase lists
@@ -23,6 +23,50 @@ const queryLists = async (filter, options) => {
 };
 
 const getPurchaseListWithPriceSaving = async (user, listId) => {
+  const listObjectId = mongoose.Types.ObjectId(listId);
+
+  let purchaseList = await PurchaseList.findOne({ list: listObjectId }).populate({
+    path: 'purchaseListItems',
+    populate: [
+      {
+        path: 'listItem',
+        model: 'ListItem',
+        populate: [
+          {
+            path: 'comparisonProducts',
+          },
+        ],
+      },
+    ],
+  });
+  if (!purchaseList) {
+    const list = await listService.getListById(listId);
+    if (!list) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
+    }
+    // create a purchase list
+    purchaseList = await PurchaseList.create({
+      name: list.name,
+      user: user.id,
+      list: listId,
+    });
+  }
+
+  if (!purchaseList) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase List not found');
+  }
+  // return purchaseList;
+  purchaseList.priceSaving = subtractWithFixed(purchaseList.unselectedTotalAmount, purchaseList.totalAmount);
+
+  purchaseList.additionalCost.forEach((vendor) => {
+    vendor.priceSaving = subtractWithFixed(vendor.totalAmount, purchaseList.totalAmount);
+  });
+
+  await purchaseList.save();
+  return purchaseList;
+};
+
+const upsertPurchaseList = async (user, listId) => {
   const listObjectId = mongoose.Types.ObjectId(listId);
 
   let purchaseList = await PurchaseList.findOne({ list: listObjectId }).populate({
@@ -243,4 +287,5 @@ module.exports = {
   deletePurchaseListById,
   addPurchaseListItem,
   removePurchaseListItem,
+  upsertPurchaseList,
 };

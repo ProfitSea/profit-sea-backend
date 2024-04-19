@@ -11,6 +11,14 @@ const getPurchaseLists = catchAsync(async (req, res) => {
   res.send({ result });
 });
 
+const upsertPurchaseList = catchAsync(async (req, res) => {
+  const purchaseList = await purchaseListService.upsertPurchaseList(req.user, req.query.listId);
+  if (!purchaseList) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
+  }
+  res.send({ purchaseList });
+});
+
 const getPurchaseList = catchAsync(async (req, res) => {
   const purchaseList = await purchaseListService.getPurchaseListWithPriceSaving(req.user, req.params.listId);
   if (!purchaseList) {
@@ -54,4 +62,5 @@ module.exports = {
   deletePurchaseList,
   addPurchaseListItem,
   removePurchaseListItem,
+  upsertPurchaseList,
 };
