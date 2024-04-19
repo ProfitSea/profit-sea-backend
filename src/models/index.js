@@ -5,3 +5,6 @@ module.exports.List = require('./list.model');
 module.exports.ListItem = require('./listItem.model');
 module.exports.Price = require('./price.model');
 module.exports.ProductSaleUnit = require('./productSaleUnit.model');
+module.exports.PurchaseList = require('./purchaseList.model');
+module.exports.PurchaseListItem = require('./purchaseListItem.model');
+module.exports.Vendor = require('./vendor.model');

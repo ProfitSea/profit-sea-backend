@@ -50,6 +50,11 @@ const toggleListItemAnchor = catchAsync(async (req, res) => {
   res.send({ listItem, message: 'List item anchored' });
 });
 
+const toggleListItemIsSelected = catchAsync(async (req, res) => {
+  const listItem = await listItemService.toggleListItemIsSelected(req.user, req.params.id, req.query.baseListItemId);
+  res.send({ listItem, message: 'List item isSelected toggled' });
+});
+
 module.exports = {
   addComparisonProduct,
   removeComparisonProduct,
@@ -59,4 +64,5 @@ module.exports = {
   updateListItemPricesByProductNumber,
   getListItemById,
   toggleListItemAnchor,
+  toggleListItemIsSelected,
 };

@@ -9,6 +9,7 @@ class OpenAiService {
   }
 
   async getRecomendation(productsInfo) {
+    console.log('');
     const recommendation = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -40,21 +41,20 @@ class OpenAiService {
     recommendedProductArray.forEach((elem) => {
       const [key, value] = elem.split(': ');
       if (key && value) {
-        const keyWithoutSpaces = key.trim().replace(/\s+/g, '_').toLowerCase();
         switch (true) {
-          case keyWithoutSpaces.includes('vendor'):
+          case key.toLowerCase().includes('vendor'):
             recommendedProductObject['vendor'] = value.trim();
             break;
-          case keyWithoutSpaces.includes('id'):
+          case key.toLowerCase().includes('id'):
             recommendedProductObject['productId'] = value.trim();
             break;
-          case keyWithoutSpaces.includes('product'):
+          case key.toLowerCase().includes('product'):
             recommendedProductObject['product'] = value.trim();
             break;
-          case keyWithoutSpaces.includes('savings'):
-            recommendedProductObject['priceSavings'] = value.trim();
+          case key.toLowerCase().includes('savings'):
+            recommendedProductObject['priceSaving'] = value.trim();
             break;
-          case keyWithoutSpaces.includes('reason'):
+          case key.toLowerCase().includes('reason'):
             recommendedProductObject['suggestionReason'] = value.trim();
             break;
           // Add more cases if needed

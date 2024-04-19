@@ -88,6 +88,14 @@ const getListById = async (listId) => {
     populate: [
       {
         path: 'product',
+        populate: [
+          {
+            path: 'vendor',
+          },
+        ],
+      },
+      {
+        path: 'vendor',
       },
       {
         path: 'saleUnitQuantities.saleUnit',
@@ -103,6 +111,14 @@ const getListById = async (listId) => {
         populate: [
           {
             path: 'product',
+            populate: [
+              {
+                path: 'vendor',
+              },
+            ],
+          },
+          {
+            path: 'vendor',
           },
           {
             path: 'saleUnitQuantities.saleUnit',
@@ -118,8 +134,9 @@ const getListById = async (listId) => {
   });
 };
 
+// TODO: update this: remove productNumber, brand and add listItem id
 const formatProduct = (product) => {
-  return ` productNumber: ${product.productNumber},  ${product.brand}, ${product.vendor},  description: ${product.description}, price/unit: $${product.price}/${product.unit}, packSize/unit: ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice} `;
+  return `productId: ${product.productId}, vendor: ${product.vendor.name},  description: ${product.description}, price/unit: $${product.price}/${product.unit}, packSize/unit: ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice} `;
 };
 
 const formatProductGroup = (productGroup) => {
@@ -155,7 +172,7 @@ function extractProductInfo(item) {
 
 const getListAnalysis = async (user, listId) => {
   // Retrieve the list by ID
-  const list = await getListById(listId);
+  let list = await getListById(listId);
 
   if (!list) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
@@ -166,6 +183,7 @@ const getListAnalysis = async (user, listId) => {
   if (!list.itemsCount) {
     return [];
   }
+
   const groupedProducts = {};
   for (const listItem of list.listItems) {
     if (listItem.isBaseProduct && !listItem.isAnchored) {
@@ -179,36 +197,34 @@ const getListAnalysis = async (user, listId) => {
       }
     }
   }
+
   const groupedProductsArray = Object.values(groupedProducts);
   if (!groupedProductsArray.length) return [];
+  const productInfoForAiRecommendation = formatList(groupedProductsArray);
 
-  const productInfoForRecommendationForAI = formatList(groupedProductsArray);
   // Send recommendation requests in parallel
   const recommendations = await Promise.all(
-    productInfoForRecommendationForAI.map(async (group) => {
+    productInfoForAiRecommendation.map(async (group) => {
       const groupString = group.join();
+
       const openAiService = new OpenAiService();
       return await openAiService.getRecomendation(groupString);
     })
   );
 
-  let indexCounter = 0;
-  for (const listItem of list.listItems) {
-    if (listItem.isBaseProduct && !listItem.isAnchored) {
+  // Update list items with recommendations
+  const updatePromises = list.listItems
+    .filter((listItem) => listItem.isBaseProduct)
+    .map(async (listItem, index) => {
       listItem.recommendation = {};
-      listItem.recommendation.priceSavings = recommendations[indexCounter]?.priceSavings;
-      listItem.recommendation.reason = recommendations[indexCounter]?.suggestionReason;
-      const listItemByProductNumber = await listItemService.getListItemByProductNumber(
-        recommendations[indexCounter]?.productNumber
-      );
-      if (listItemByProductNumber) {
-        listItem.recommendation.listItemId = listItemByProductNumber.id;
-      }
+      listItem.recommendation.priceSaving = recommendations[index]?.priceSaving;
+      listItem.recommendation.reason = recommendations[index]?.suggestionReason;
+      const listItemById = await listItemService.getListItemByProductId(recommendations[index]?.productId, listId);
+      listItem.recommendation.listItemId = listItemById.id;
       await listItem.save();
-      indexCounter = indexCounter + 1;
-    }
-  }
-  await list.save(); // Save the updated list
+    });
+
+  await Promise.all(updatePromises); // Wait for all updates to complete
   // Fetch updated list after saving
   const updatedList = await getListById(listId);
   const isBaseProductListItems = updatedList.listItems.filter((listItem) => listItem.isBaseProduct && !listItem.isAnchored);

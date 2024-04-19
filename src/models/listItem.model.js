@@ -20,7 +20,8 @@ const listItemSchema = mongoose.Schema(
       },
     ],
     vendor: {
-      type: String,
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'Vendor',
       required: true,
     },
     user: {
@@ -59,12 +60,16 @@ const listItemSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isSelected: {
+      type: Boolean,
+      default: false,
+    },
     recommendation: {
       listItemId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ListItem',
       },
-      priceSavings: {
+      priceSaving: {
         type: String,
       },
       reason: {

@@ -17,9 +17,7 @@ router
   .patch(auth(), validate(listValidation.updateList), listController.updateList)
   .delete(auth(), validate(listValidation.deleteList), listController.deleteList);
 
-router
-.route('/:listId/analysis')
-.get(auth(), validate(listValidation.getList), listController.getListAnalysis)
+router.route('/:listId/analysis').get(auth(), validate(listValidation.getList), listController.getListAnalysis);
 
 router.route('/:listId/name').patch(auth(), validate(listValidation.updateListName), listController.updateListName);
 
