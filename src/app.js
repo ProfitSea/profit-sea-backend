@@ -1,6 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
-const xss = require('xss-clean');
+const xss = require('xss');
 const mongoSanitize = require('express-mongo-sanitize');
 const compression = require('compression');
 const cors = require('cors');
@@ -27,11 +27,29 @@ app.use(helmet());
 // parse json request body
 app.use(express.json());
 
+// Middleware to sanitize input data
+function sanitizeInput(req, res, next) {
+  Object.keys(req.body).forEach((key) => {
+    req.body[key] = xss(req.body[key]);
+  });
+
+  Object.keys(req.query).forEach((key) => {
+    req.query[key] = xss(req.query[key]);
+  });
+
+  Object.keys(req.params).forEach((key) => {
+    req.params[key] = xss(req.params[key]);
+  });
+
+  next();
+}
+
+app.use(sanitizeInput);
+
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
 
 // sanitize request data
-app.use(xss());
 app.use(mongoSanitize());
 
 // gzip compression
