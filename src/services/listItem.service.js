@@ -222,7 +222,7 @@ const updateComparisonProduct = async (user, baseListItemId, comparisonListItemI
     };
     message = 'List item removed to comparison group succesfully';
     if (baseListItem.comparisonProducts.length === 1) {
-      updateQuery['$set'] = { isBaseProduct: false };
+      updateQuery.$set = { isBaseProduct: false };
       message = 'Product group removed succesfully';
     }
   }
@@ -234,11 +234,11 @@ const updateComparisonProduct = async (user, baseListItemId, comparisonListItemI
 };
 
 const addComparisonProduct = async (user, baseListItemId, comparisonListItemId) => {
-  return await updateComparisonProduct(user, baseListItemId, comparisonListItemId, true);
+  return updateComparisonProduct(user, baseListItemId, comparisonListItemId, true);
 };
 
 const removeComparisonProduct = async (user, baseListItemId, comparisonListItemId) => {
-  return await updateComparisonProduct(user, baseListItemId, comparisonListItemId, false);
+  return updateComparisonProduct(user, baseListItemId, comparisonListItemId, false);
 };
 
 const updateListItemPriceUsingSaleUnit = async (user, listItemId, prices) => {
@@ -353,7 +353,7 @@ const findListItemsByProductNumber = async (user, { productNumber }) => {
  */
 const updatePricesByProductNumber = async (user, { productNumber }, prices) => {
   const listItems = await findListItemsByProductNumber(user, { productNumber });
-  if (listItems?.length <= 0) {
+  if (listItems && listItems.length <= 0) {
     return listItems;
   }
   const updatePromises = listItems.map(async (listItemId) => updateListItemPriceUsingSaleUnit(user, listItemId, prices));
@@ -395,7 +395,7 @@ const createListItem = async (user, listId, product) => {
       });
       return {
         saleUnit: saleUnit.id,
-        quantity: 0,
+        quantity: 1,
         price,
       };
     }

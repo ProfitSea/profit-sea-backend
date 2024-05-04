@@ -8,19 +8,37 @@ class OpenAiService {
     });
   }
 
+  static convertToJSON(dataString) {
+    const lines = dataString.split('\n');
+
+    const result = {};
+
+    lines.forEach((line) => {
+      const trimmedLine = line.replace(/^- /, '').trim();
+
+      const colonIndex = trimmedLine.indexOf(':');
+      const key = trimmedLine.substring(0, colonIndex).trim();
+      const value = trimmedLine
+        .substring(colonIndex + 1)
+        .trim()
+        .replace(/,$/, '');
+      result[key] = value;
+    });
+    return result;
+  }
+
   async getRecomendation(productsInfo) {
-    console.log('');
     const recommendation = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           content: `
-            As a specialized tool for restaurant owners and managers, your role is to automate and optimize food supply cost analysis.
-            When users provide real-time prices and product descriptions from various vendors, your task is to analyze, compare, and recommend the most economical options.
-            Your responses should follow a structured format: Suggested product vendor name, Suggested Product name, Suggested product ID number, Price savings,
-            and a concise Reason for the suggestion (200 characters or less). This functionality addresses challenges like price volatility and inconsistent pricing,
-            aiming to enhance budgeting and operational efficiency. You're part of a broader objective to disrupt the food distribution market and promote transparency and efficiency, empowering restaurant owners in a competitive market.
-            Please analyze the unit prices for each item and recommend the optimal choice.
+          Analyze the cost-effectiveness based on the vendor, description, price per unit and the pack size without considering quantity. Recommend which product is cheaper per unit and suitable based on the pack size. 
+          Provide the following formatted response:
+          - vendorName: [Vendor Name]
+          - priceSaving: [Exact savings per unit]
+          - itemId: [Cheapest item ID]
+          - reason: [Concise reason under 200 characters why this item is the best choice]
             `,
           role: 'system',
         },
@@ -34,34 +52,8 @@ class OpenAiService {
       max_tokens: 150,
       n: 1,
     });
-    const recommendedProduct = recommendation?.choices[0].message.content;
-    const recommendedProductArray = recommendedProduct.split('\n');
-    const recommendedProductObject = {};
-
-    recommendedProductArray.forEach((elem) => {
-      const [key, value] = elem.split(': ');
-      if (key && value) {
-        switch (true) {
-          case key.toLowerCase().includes('vendor'):
-            recommendedProductObject['vendor'] = value.trim();
-            break;
-          case key.toLowerCase().includes('id'):
-            recommendedProductObject['productId'] = value.trim();
-            break;
-          case key.toLowerCase().includes('product'):
-            recommendedProductObject['product'] = value.trim();
-            break;
-          case key.toLowerCase().includes('savings'):
-            recommendedProductObject['priceSaving'] = value.trim();
-            break;
-          case key.toLowerCase().includes('reason'):
-            recommendedProductObject['suggestionReason'] = value.trim();
-            break;
-          // Add more cases if needed
-        }
-      }
-    });
-    return recommendedProductObject;
+    const recommendedProduct = recommendation.choices[0].message.content;
+    return OpenAiService.convertToJSON(recommendedProduct);
   }
 }
 

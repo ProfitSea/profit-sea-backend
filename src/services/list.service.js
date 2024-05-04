@@ -4,14 +4,6 @@ const ApiError = require('../utils/ApiError');
 const listItemService = require('./listItem.service');
 const OpenAiService = require('./openai.service');
 
-const OpenAI = require('openai');
-const config = require('../config/config');
-const { updateProductById } = require('./product.service');
-
-const openai = new OpenAI({
-  apiKey: config.openAi.key,
-});
-
 /**
  * Create a list
  * @param {Object} listBody
@@ -83,7 +75,7 @@ const queryLists = async (filter, options) => {
  * @returns {Promise<List>}
  */
 const getListById = async (listId) => {
-  return await List.findById(listId).populate({
+  return List.findById(listId).populate({
     path: 'listItems',
     populate: [
       {
@@ -136,7 +128,7 @@ const getListById = async (listId) => {
 
 // TODO: update this: remove productNumber, brand and add listItem id
 const formatProduct = (product) => {
-  return `productId: ${product.productId}, vendor: ${product.vendor.name},  description: ${product.description}, price/unit: $${product.price}/${product.unit}, packSize/unit: ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice} `;
+  return `itemId: ${product.listItemId}, vendor: ${product.vendor.name},  description: ${product.description}, price/unit: $${product.price}/${product.unit}, packSize/unit: ${product.packSize}/${product.unit}, Qty: ${product.quantity}, Total $${product.totalPrice} `;
 };
 
 const formatProductGroup = (productGroup) => {
@@ -156,10 +148,10 @@ function extractProductInfo(item) {
     description: item.product.description,
     productNumber: item.product.productNumber,
     packSize: item.product.packSize,
-    totalPrice: item?.totalPrice,
-    price: item?.saleUnitQuantities[0].price?.price,
-    quantity: item?.saleUnitQuantities[0].quantity,
-    unit: item?.saleUnitQuantities[0]?.saleUnit?.unit,
+    totalPrice: item.totalPrice,
+    price: item.saleUnitQuantities[0].price.price,
+    quantity: item.saleUnitQuantities[0].quantity,
+    unit: item.saleUnitQuantities[0].saleUnit.unit,
   };
 }
 
@@ -172,7 +164,7 @@ function extractProductInfo(item) {
 
 const getListAnalysis = async (user, listId) => {
   // Retrieve the list by ID
-  let list = await getListById(listId);
+  const list = await getListById(listId);
 
   if (!list) {
     throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
@@ -185,15 +177,16 @@ const getListAnalysis = async (user, listId) => {
   }
 
   const groupedProducts = {};
-  for (const listItem of list.listItems) {
+  for (let i = 0; i < list.listItems.length; i += 1) {
+    const listItem = list.listItems[i];
     if (listItem.isBaseProduct && !listItem.isAnchored) {
       const productId = listItem.product._id.toString();
       if (!groupedProducts[productId]) {
         groupedProducts[productId] = [];
       }
       groupedProducts[productId].push(extractProductInfo(listItem));
-      for (const comparisonListItem of listItem.comparisonProducts) {
-        groupedProducts[productId].push(extractProductInfo(comparisonListItem));
+      for (let j = 0; j < listItem.comparisonProducts.length; j += 1) {
+        groupedProducts[productId].push(extractProductInfo(listItem.comparisonProducts[j]));
       }
     }
   }
@@ -208,7 +201,7 @@ const getListAnalysis = async (user, listId) => {
       const groupString = group.join();
 
       const openAiService = new OpenAiService();
-      return await openAiService.getRecomendation(groupString);
+      return openAiService.getRecomendation(groupString);
     })
   );
 
@@ -217,10 +210,9 @@ const getListAnalysis = async (user, listId) => {
     .filter((listItem) => listItem.isBaseProduct)
     .map(async (listItem, index) => {
       listItem.recommendation = {};
-      listItem.recommendation.priceSaving = recommendations[index]?.priceSaving;
-      listItem.recommendation.reason = recommendations[index]?.suggestionReason;
-      const listItemById = await listItemService.getListItemByProductId(recommendations[index]?.productId, listId);
-      listItem.recommendation.listItemId = listItemById.id;
+      listItem.recommendation.priceSaving = `${recommendations[index].priceSaving}`;
+      listItem.recommendation.reason = recommendations[index].reason;
+      listItem.recommendation.listItemId = recommendations[index].itemId;
       await listItem.save();
     });
 
