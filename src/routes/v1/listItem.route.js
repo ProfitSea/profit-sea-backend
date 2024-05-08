@@ -29,7 +29,11 @@ router
 
 router
   .route('/toggle-isSelected/:id')
-  .get(auth(), validate(listItemValidation.toggleListItemIsSelected), listItemController.toggleListItemIsSelected);
+  .patch(auth(), validate(listItemValidation.toggleListItemIsSelected), listItemController.toggleListItemIsSelected);
+
+// router
+//   .route('/toggle-isRejected/:id')
+//   .get(auth(), validate(listItemValidation.toggleListItemIsRejected), listItemController.toggleListItemIsRejected);
 
 router
   .route('/quantity')

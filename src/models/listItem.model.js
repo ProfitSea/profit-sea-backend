@@ -64,6 +64,10 @@ const listItemSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isRejected: {
+      type: Boolean,
+      default: false,
+    },
     recommendation: {
       listItemId: {
         type: mongoose.Schema.Types.ObjectId,

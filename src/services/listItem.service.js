@@ -479,11 +479,60 @@ const toggleListItemIsSelected = async (user, listItemId, baseListItemId) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Base list item is not a base product');
   }
 
-  if (!baseListItem.comparisonProducts.includes(listItemId)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'List item is not present in comparison group');
+  if (!baseListItem.comparisonProducts.includes(listItemId) && !listItem.id.toString() === baseListItemId.toString()) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Wrong List Item ID');
   }
 
   listItem.isSelected = !listItem.isSelected;
+  if (listItem.isSelected) {
+    listItem.isRejected = false;
+  }
+  await listItem.save();
+  return listItem;
+};
+
+const toggleListItemIsRejected = async (user, listItemId, baseListItemId) => {
+  const [listItem, baseListItem] = await Promise.all([
+    ListItem.findOne({
+      user: user.id,
+      _id: listItemId,
+    }),
+    ListItem.findOne({
+      user: user.id,
+      _id: baseListItemId,
+    }),
+  ]);
+
+  if (!listItem || !baseListItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'ListItem not found');
+  }
+
+  if (!baseListItem.isBaseProduct) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Base list item is not a base product');
+  }
+
+  if (baseListItem.isAnchored) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Base list item is anchored');
+  }
+
+  if (listItem.isAnchored) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'List item is anchored');
+  }
+
+  if (!baseListItem.isBaseProduct) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Base list item is not a base product');
+  }
+
+  if (listItem.id.toString() !== baseListItemId.toString()) {
+    if (!baseListItem.comparisonProducts.includes(listItemId)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Wrong List Item ID');
+    }
+  }
+
+  listItem.isRejected = !listItem.isRejected;
+  if (listItem.isRejected) {
+    listItem.isSelected = false;
+  }
   await listItem.save();
   return listItem;
 };
@@ -503,4 +552,5 @@ module.exports = {
   updatePricesByProductNumber,
   toggleListItemAnchor,
   toggleListItemIsSelected,
+  toggleListItemIsRejected,
 };

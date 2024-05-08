@@ -29,6 +29,15 @@ const toggleListItemIsSelected = {
   }),
 };
 
+const toggleListItemIsRejected = {
+  params: Joi.object().keys({
+    id: Joi.string().custom(objectId).required(),
+  }),
+  query: Joi.object().keys({
+    baseListItemId: Joi.string().custom(objectId).required(),
+  }),
+};
+
 const updateListItemPricesByProductNumber = {
   query: {
     productNumber: Joi.string().required(),
@@ -77,4 +86,5 @@ module.exports = {
   getListItemById,
   toggleListItemAnchor,
   toggleListItemIsSelected,
+  toggleListItemIsRejected,
 };

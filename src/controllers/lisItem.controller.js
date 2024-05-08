@@ -52,7 +52,12 @@ const toggleListItemAnchor = catchAsync(async (req, res) => {
 
 const toggleListItemIsSelected = catchAsync(async (req, res) => {
   const listItem = await listItemService.toggleListItemIsSelected(req.user, req.params.id, req.query.baseListItemId);
-  res.send({ listItem, message: 'List item isSelected toggled' });
+  res.send({ listItem, message: 'List item selected' });
+});
+
+const toggleListItemIsRejected = catchAsync(async (req, res) => {
+  const listItem = await listItemService.toggleListItemIsRejected(req.user, req.params.id, req.query.baseListItemId);
+  res.send({ listItem, message: 'List item rejected' });
 });
 
 module.exports = {
@@ -65,4 +70,5 @@ module.exports = {
   getListItemById,
   toggleListItemAnchor,
   toggleListItemIsSelected,
+  toggleListItemIsRejected,
 };
