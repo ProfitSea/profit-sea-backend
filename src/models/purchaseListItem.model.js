@@ -21,7 +21,6 @@ const purchaseListItemSchema = mongoose.Schema(
     unselectedListItem: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: 'ListItem',
-      required: true,
     },
     priceAtOrder: {
       type: [
