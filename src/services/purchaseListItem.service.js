@@ -1,7 +1,6 @@
 const httpStatus = require('http-status');
 const { PurchaseListItem } = require('../models');
 const ApiError = require('../utils/ApiError');
-const listItemService = require('./listItem.service');
 
 /**
  * Query for purchase list items
@@ -45,40 +44,46 @@ const getPurchaseListItemById = async (purchaseListItemId) => {
  * @param {ObjectId} listId
  * @returns {Promise<ListItem>}
  */
-const createPurchaseListItem = async (user, purchaseListId, selectedListItemId, unselectedListItemId) => {
-  const existingPurchaseListItem = await PurchaseListItem.findOne({
-    user: user.id,
-    purchaseList: purchaseListId,
-    listItem: selectedListItemId,
-  });
-
-  if (existingPurchaseListItem) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'List item was already added to the Purchase List');
-  }
-
-  const unselectedExistingPurchaseListItem = await PurchaseListItem.findOne({
-    user: user.id,
-    purchaseList: purchaseListId,
-    listItem: unselectedListItemId,
-  });
-
-  if (unselectedExistingPurchaseListItem) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'This product was already unselected therefore cannot be added to the Purchase List'
-    );
-  }
-
-  const listItem = await listItemService.getListItemById(selectedListItemId);
+const createPurchaseListItem = async (
+  user,
+  purchaseListId,
+  selectedListItem,
+  unselectedListItem,
+  recommendation,
+  session
+) => {
   const purchaseListItemPayload = {
     user: user.id,
     purchaseList: purchaseListId,
-    listItem: selectedListItemId,
-    priceAtOrder: listItem.saleUnitQuantities,
-    unselectedListItem: unselectedListItemId,
+    listItem: selectedListItem.id,
+    priceAtOrder: selectedListItem.saleUnitQuantities,
+    unselectedListItem: unselectedListItem.id,
+    recommendation,
   };
   const purchaseListItem = new PurchaseListItem(purchaseListItemPayload);
-  await purchaseListItem.save();
+  if (session) {
+    await purchaseListItem.save({ session });
+  } else {
+    await purchaseListItem.save();
+  }
+  return purchaseListItem;
+};
+
+const createAnchoredPurchaseListItem = async (user, purchaseListId, listItem, session) => {
+  const purchaseListItem = PurchaseListItem({
+    user: user.id,
+    purchaseList: purchaseListId,
+    listItem: listItem.id,
+    priceAtOrder: listItem.saleUnitQuantities,
+    isAnchored: true,
+  });
+
+  if (session) {
+    await purchaseListItem.save({ session });
+  } else {
+    await purchaseListItem.save();
+  }
+
   return purchaseListItem;
 };
 
@@ -87,12 +92,13 @@ const createPurchaseListItem = async (user, purchaseListId, selectedListItemId, 
  * @param {ObjectId} listId
  * @returns {Promise<ListItem>}
  */
-const removePurchaseListItemById = async (purchaseListItemId) => {
+const removePurchaseListItemById = async (purchaseListItemId, session) => {
   const purchaseListItem = await PurchaseListItem.findById(purchaseListItemId);
   if (!purchaseListItem) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found');
   }
-  await purchaseListItem.remove();
+  if (session) await purchaseListItem.remove({ session });
+  else await purchaseListItem.remove();
 };
 
 module.exports = {
@@ -100,4 +106,5 @@ module.exports = {
   getPurchaseListItemById,
   createPurchaseListItem,
   removePurchaseListItemById,
+  createAnchoredPurchaseListItem,
 };

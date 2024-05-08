@@ -20,7 +20,7 @@ const upsertPurchaseList = catchAsync(async (req, res) => {
 });
 
 const getPurchaseList = catchAsync(async (req, res) => {
-  const purchaseList = await purchaseListService.getPurchaseListWithPriceSaving(req.user, req.params.listId);
+  const purchaseList = await purchaseListService.getPurchaseListWithPriceSaving(req.user, req.query.listId);
   if (!purchaseList) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
   }

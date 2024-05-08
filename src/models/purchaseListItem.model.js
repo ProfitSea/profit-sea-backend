@@ -48,6 +48,19 @@ const purchaseListItemSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    recommendation: {
+      listItemId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ListItem',
+      },
+      priceSaving: {
+        type: String,
+      },
+      reason: {
+        type: String,
+        maxlength: 300,
+      },
+    },
   },
   {
     timestamps: true,

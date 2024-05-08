@@ -33,12 +33,12 @@ class OpenAiService {
       messages: [
         {
           content: `
-          Analyze the cost-effectiveness based on the vendor, description, price per unit and the pack size without considering quantity. Recommend which product is cheaper per unit and suitable based on the pack size. 
+          Analyze the cost-effectiveness based on the vendor, description, price per unit, and the pack size without considering quantity. Recommend which product is cheaper and suitable based on the pack size. 
           Provide the following formatted response:
           - vendorName: [Vendor Name]
-          - priceSaving: [Exact savings per unit]
+          - priceSaving: [Exact savings only numbers with dollar sign]
           - itemId: [Cheapest item ID]
-          - reason: [Concise reason under 200 characters why this item is the best choice]
+          - reason: [Concise reason within 20 words, include 'per unit' if referring to unit cost]
             `,
           role: 'system',
         },

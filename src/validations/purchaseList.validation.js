@@ -11,13 +11,13 @@ const getPurchaseLists = {
 
 const upsertPurchaseList = {
   query: Joi.object().keys({
-    listId: Joi.string().custom(objectId),
+    listId: Joi.string().custom(objectId).required(),
   }),
 };
 
 const getPurchaseList = {
-  params: Joi.object().keys({
-    listId: Joi.string().custom(objectId),
+  query: Joi.object().keys({
+    listId: Joi.string().custom(objectId).required(),
   }),
 };
 

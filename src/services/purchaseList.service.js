@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 const httpStatus = require('http-status');
 const mongoose = require('mongoose');
 const { PurchaseList } = require('../models');
@@ -22,94 +23,6 @@ const queryLists = async (filter, options) => {
   return lists;
 };
 
-const getPurchaseListWithPriceSaving = async (user, listId) => {
-  const listObjectId = mongoose.Types.ObjectId(listId);
-
-  let purchaseList = await PurchaseList.findOne({ list: listObjectId }).populate({
-    path: 'purchaseListItems',
-    populate: [
-      {
-        path: 'listItem',
-        model: 'ListItem',
-        populate: [
-          {
-            path: 'comparisonProducts',
-          },
-        ],
-      },
-    ],
-  });
-  if (!purchaseList) {
-    const list = await listService.getListById(listId);
-    if (!list) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
-    }
-    // create a purchase list
-    purchaseList = await PurchaseList.create({
-      name: list.name,
-      user: user.id,
-      list: listId,
-    });
-  }
-
-  if (!purchaseList) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase List not found');
-  }
-  // return purchaseList;
-  purchaseList.priceSaving = subtractWithFixed(purchaseList.unselectedTotalAmount, purchaseList.totalAmount);
-
-  purchaseList.additionalCost.forEach((vendor) => {
-    vendor.priceSaving = subtractWithFixed(vendor.totalAmount, purchaseList.totalAmount);
-  });
-
-  await purchaseList.save();
-  return purchaseList;
-};
-
-const upsertPurchaseList = async (user, listId) => {
-  const listObjectId = mongoose.Types.ObjectId(listId);
-
-  let purchaseList = await PurchaseList.findOne({ list: listObjectId }).populate({
-    path: 'purchaseListItems',
-    populate: [
-      {
-        path: 'listItem',
-        model: 'ListItem',
-        populate: [
-          {
-            path: 'comparisonProducts',
-          },
-        ],
-      },
-    ],
-  });
-  if (!purchaseList) {
-    const list = await listService.getListById(listId);
-    if (!list) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
-    }
-    // create a purchase list
-    purchaseList = await PurchaseList.create({
-      name: list.name,
-      user: user.id,
-      list: listId,
-    });
-  }
-
-  if (!purchaseList) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase List not found');
-  }
-  // return purchaseList;
-  purchaseList.priceSaving = subtractWithFixed(purchaseList.unselectedTotalAmount, purchaseList.totalAmount);
-
-  purchaseList.additionalCost.forEach((vendor) => {
-    vendor.priceSaving = subtractWithFixed(vendor.totalAmount, purchaseList.totalAmount);
-  });
-
-  await purchaseList.save();
-  return purchaseList;
-};
-
 /**
  * Get list by id
  * @param {ObjectId} listId
@@ -124,12 +37,245 @@ const getPurchaseListById = async (listId) => {
         model: 'ListItem',
         populate: [
           {
+            path: 'product',
+            model: 'Products',
+            populate: [
+              {
+                path: 'vendor',
+              },
+            ],
+          },
+          {
+            path: 'vendor',
+          },
+          {
+            path: 'saleUnitQuantities.saleUnit',
+            model: 'ProductSaleUnit',
+          },
+          {
+            path: 'saleUnitQuantities.price',
+            model: 'Price',
+          },
+          {
             path: 'comparisonProducts',
+            model: 'ListItem',
+            populate: [
+              {
+                path: 'product',
+                model: 'Products',
+                populate: [
+                  {
+                    path: 'vendor',
+                  },
+                ],
+              },
+              {
+                path: 'vendor',
+              },
+              {
+                path: 'saleUnitQuantities.saleUnit',
+                model: 'ProductSaleUnit',
+              },
+              {
+                path: 'saleUnitQuantities.price',
+                model: 'Price',
+              },
+            ],
           },
         ],
       },
     ],
   });
+};
+
+const getPurchaseListWithPriceSaving = async (user, listId) => {
+  const listObjectId = mongoose.Types.ObjectId(listId);
+
+  const purchaseList = await PurchaseList.findOne({ list: listObjectId }).populate({
+    path: 'purchaseListItems',
+    populate: [
+      {
+        path: 'listItem',
+        model: 'ListItem',
+        populate: [
+          {
+            path: 'product',
+            model: 'Products',
+            populate: [
+              {
+                path: 'vendor',
+              },
+            ],
+          },
+          {
+            path: 'vendor',
+          },
+          {
+            path: 'saleUnitQuantities.saleUnit',
+            model: 'ProductSaleUnit',
+          },
+          {
+            path: 'saleUnitQuantities.price',
+            model: 'Price',
+          },
+          {
+            path: 'comparisonProducts',
+            model: 'ListItem',
+            populate: [
+              {
+                path: 'product',
+                model: 'Products',
+                populate: [
+                  {
+                    path: 'vendor',
+                  },
+                ],
+              },
+              {
+                path: 'vendor',
+              },
+              {
+                path: 'saleUnitQuantities.saleUnit',
+                model: 'ProductSaleUnit',
+              },
+              {
+                path: 'saleUnitQuantities.price',
+                model: 'Price',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  if (!purchaseList) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase List not found');
+  }
+  return purchaseList;
+};
+
+const deleteExistingPurchaseListAndPurchaseListItems = async (purchaseList, session) => {
+  for (let i = 0; i < purchaseList.purchaseListItems.length; i += 1) {
+    await purchaseListItemService.removePurchaseListItemById(purchaseList.purchaseListItems[i], session);
+  }
+
+  if (session) await purchaseList.remove({ session });
+  else await purchaseList.remove();
+};
+
+const createPurchaseList = async (user, list, session) => {
+  const purchaseList = await PurchaseList({
+    name: list.name,
+    user: user.id,
+    list: list.id,
+  });
+
+  await purchaseList.save({ session });
+
+  if (!purchaseList) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Error occured while creating Purchase List');
+  }
+  const purchaseListItems = [];
+
+  for (let i = 0; i < list.listItems.length; i += 1) {
+    const listItem = list.listItems[i];
+    let purchaseListItem;
+    if (listItem.isAnchored) {
+      purchaseListItem = await purchaseListItemService.createAnchoredPurchaseListItem(
+        user,
+        purchaseList.id,
+        listItem,
+        session
+      );
+      purchaseListItems.push(purchaseListItem);
+    } else if (listItem.isBaseProduct) {
+      if (listItem.comparisonProducts.length > 0) {
+        if (listItem.isSelected) {
+          purchaseListItem = await purchaseListItemService.createPurchaseListItem(
+            user,
+            purchaseList.id,
+            listItem,
+            listItem.comparisonProducts[0],
+            listItem.recommendation,
+            session
+          );
+          purchaseListItems.push(purchaseListItem);
+        } else if (listItem.comparisonProducts[0].isSelected) {
+          purchaseListItem = await purchaseListItemService.createPurchaseListItem(
+            user,
+            purchaseList.id,
+            listItem.comparisonProducts[0],
+            listItem,
+            listItem.recommendation,
+            session
+          );
+          purchaseListItems.push(purchaseListItem);
+        }
+        // else if (listItem.recommendation.listItemId.toString() === listItem.id.toString()) {
+        //   purchaseListItem = await purchaseListItemService.createPurchaseListItem(
+        //     user,
+        //     purchaseList.id,
+        //     listItem,
+        //     listItem.comparisonProducts[0],
+        //     listItem.recommendation,
+        //     session
+        //   );
+        //   purchaseListItems.push(purchaseListItem);
+        // } else if (listItem.recommendation.listItemId.toString() === listItem.comparisonProducts[0].id.toString()) {
+        //   purchaseListItem = await purchaseListItemService.createPurchaseListItem(
+        //     user,
+        //     purchaseList.id,
+        //     listItem.comparisonProducts[0],
+        //     listItem,
+        //     listItem.recommendation,
+        //     session
+        //   );
+        //   purchaseListItems.push(purchaseListItem);
+        // }
+      }
+    }
+  }
+
+  purchaseList.purchaseListItems = purchaseListItems.map((item) => item.id);
+  await purchaseList.save();
+
+  return purchaseList;
+};
+
+const upsertPurchaseList = async (user, listId) => {
+  // first we need to check if there is any existing
+  // purchase list for this list or not if yes then update it
+  // else create a new one
+
+  const session = await mongoose.startSession(); // Start a new session
+  session.startTransaction(); // Start a new transaction
+
+  const listObjectId = mongoose.Types.ObjectId(listId);
+  const list = await listService.getListById(listId);
+  if (!list) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'List not found');
+  }
+
+  let purchaseList = await PurchaseList.findOne({ list: listObjectId });
+  try {
+    if (!purchaseList) {
+      purchaseList = await createPurchaseList(user, list, session);
+    } else {
+      // want to update Purchase list here and then return it
+      // delete all the old purchase list items
+      await deleteExistingPurchaseListAndPurchaseListItems(purchaseList, session);
+      // update purchase list according to the list
+      purchaseList = await createPurchaseList(user, list, session);
+    }
+    await session.commitTransaction(); // Commit the transaction if all operations succeed
+    session.endSession(); // End the session
+    return getPurchaseListById(purchaseList.id);
+  } catch (error) {
+    await session.abortTransaction();
+    throw error; // Rethrow the error to handle it in the caller
+  } finally {
+    session.endSession();
+  }
 };
 
 /**
