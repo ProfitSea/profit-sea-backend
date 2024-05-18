@@ -149,7 +149,7 @@ const getPurchaseListWithPriceSaving = async (user, listId) => {
     ],
   });
   if (!purchaseList) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase List not found');
+    return {};
   }
   return purchaseList;
 };
@@ -425,6 +425,38 @@ const removePurchaseListItem = async (user, purchaseListItemId) => {
   }
 };
 
+const removePurchaseListItemById = async (user, purchaseListId, purchaseListItemId) => {
+  const purchaseListPromise = await PurchaseList.findById(purchaseListId);
+
+  const purchaseListItemPromise = await purchaseListItemService.getPurchaseListItemById(purchaseListItemId);
+
+  const [purchaseList, purchaseListItem] = await Promise.all([purchaseListPromise, purchaseListItemPromise]);
+
+  if (!purchaseList) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list not found');
+  }
+
+  if (!purchaseListItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found');
+  }
+
+  if (purchaseList.user.toString() !== user.id || purchaseListItem.user.id.toString() !== user.id) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+  }
+
+  if (purchaseList.purchaseListItems.indexOf(purchaseListItemId) === -1) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase list item not found in purchase list');
+  }
+
+  await purchaseListItemService.removePurchaseListItemById(purchaseListItemId);
+
+  purchaseList.purchaseListItems = purchaseList.purchaseListItems.filter(
+    (item) => item.toString() !== purchaseListItemId.toString()
+  );
+
+  await purchaseList.save();
+};
+
 module.exports = {
   queryLists,
   getPurchaseListById,
@@ -434,4 +466,5 @@ module.exports = {
   addPurchaseListItem,
   removePurchaseListItem,
   upsertPurchaseList,
+  removePurchaseListItemById,
 };

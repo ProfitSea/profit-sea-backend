@@ -16,4 +16,12 @@ router
   .route('/:purchaseListId/name')
   .patch(auth(), validate(purchaseListValidation.updatePurchaseListName), purchaseListController.updatePurchaseListName);
 
+router
+  .route('/:purchaseListId/remove-item/:purchaseListItemId')
+  .delete(
+    auth(),
+    validate(purchaseListValidation.removePurchaseListItemById),
+    purchaseListController.removePurchaseListItemById
+  );
+
 module.exports = router;
